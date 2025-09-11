@@ -77,7 +77,7 @@ public class PersonalUserService {
 
     @Transactional(readOnly = true)
     public HoldBunniesResponse getBunniesById(String personalUserId) {
-        return holdBunnyRepositoryCustom.findHoldbunniesByUserId(personalUserId);
+        return holdBunnyRepositoryCustom.findHoldBunniesByUserId(personalUserId);
     }
 
     @Transactional(readOnly = true)

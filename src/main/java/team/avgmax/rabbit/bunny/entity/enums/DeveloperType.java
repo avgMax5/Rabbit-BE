@@ -5,5 +5,6 @@ public enum DeveloperType {
     STABLE,
     VALUE,
     POPULAR,
-    BALANCE
+    BALANCE,
+    UNDEFINED // 미발행자는 개발자 유형이 없으므로
 }

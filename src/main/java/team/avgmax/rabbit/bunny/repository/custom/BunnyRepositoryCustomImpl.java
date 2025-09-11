@@ -5,11 +5,17 @@ import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import team.avgmax.rabbit.bunny.entity.Bunny;
+import team.avgmax.rabbit.bunny.entity.enums.BunnyType;
+import team.avgmax.rabbit.bunny.entity.enums.DeveloperType;
+import team.avgmax.rabbit.user.entity.enums.Position;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 import static team.avgmax.rabbit.bunny.entity.QBadge.badge;
 import static team.avgmax.rabbit.bunny.entity.QBunny.bunny;
+import static team.avgmax.rabbit.user.entity.QPersonalUser.personalUser;
 
 @RequiredArgsConstructor
 public class BunnyRepositoryCustomImpl implements BunnyRepositoryCustom{
@@ -33,4 +39,49 @@ public class BunnyRepositoryCustomImpl implements BunnyRepositoryCustom{
                 )
                 .fetch();
     }
+
+    @Override
+    public BigDecimal findAverageGrowthRateByBunnyType(BunnyType bunnyType) {
+        return calculateAverageGrowthRate(bunny.bunnyType.eq(bunnyType));
+    }
+
+    @Override
+    public BigDecimal findAverageGrowthRateByPosition(Position position) {
+        return calculateAverageGrowthRate(bunny.position.eq(position));
+    }
+
+    @Override
+    public BigDecimal findAverageGrowthRateByDeveloperType(DeveloperType developerType) {
+        return calculateAverageGrowthRate(bunny.developerType.eq(developerType));
+    }
+
+    @Override
+    public List<Bunny> findAllWithUserOrderByMarketCapDesc() {
+        return queryFactory
+                .selectFrom(bunny)
+                .join(bunny.user, personalUser).fetchJoin()
+                .orderBy(bunny.marketCap.desc())
+                .fetch();
+    }
+
+    private BigDecimal calculateAverageGrowthRate(com.querydsl.core.types.dsl.BooleanExpression condition) {
+        NumberExpression<BigDecimal> growthRate = bunny.currentPrice.subtract(bunny.closingPrice)
+                .divide(bunny.closingPrice)
+                .multiply(100);
+
+        Double averageDouble = queryFactory
+                .select(growthRate.avg())
+                .from(bunny)
+                .where(
+                        condition,
+                        bunny.closingPrice.isNotNull(),
+                        bunny.closingPrice.ne(BigDecimal.ZERO)
+                )
+                .fetchOne();
+
+        BigDecimal average = (averageDouble != null) ? BigDecimal.valueOf(averageDouble) : null;
+
+        return (average != null) ? average.setScale(4, RoundingMode.HALF_UP) : BigDecimal.ZERO;
+    }
+
 }
