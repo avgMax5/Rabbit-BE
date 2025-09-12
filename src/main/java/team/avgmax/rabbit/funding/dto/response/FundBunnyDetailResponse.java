@@ -29,15 +29,15 @@ public record FundBunnyDetailResponse(
         SpecResponse spec
     ) {
     public static FundBunnyDetailResponse of(FundBunny fundBunny, PersonalUser user, List<UserFundingSummary> userFundingSummaries, BigDecimal myHoldingQuantity) {
-        // 1. 사용자가 구매 가능한 금액
+        // 1. 사용자 계좌 잔액
         BigDecimal myAccountC = user.getCarrot();
         BigDecimal myAccountBny = myAccountC.divide(fundBunny.getType().getPrice(), RoundingMode.DOWN);
         
-        // 2. 남은 목표 금액
+        // 2. 목표까지 남은 금액
         BigDecimal remainingTargetBny = fundBunny.getType().getTotalSupply().subtract(fundBunny.getCollectedBny());
         
-        // 3. 총 공급량의 50%
-        BigDecimal maxSinglePurchaseBny = fundBunny.getType().getTotalSupply().multiply(new BigDecimal("0.5"));
+        // 3. 총 공급량의 50% - 나의 보유 지분
+        BigDecimal maxSinglePurchaseBny = fundBunny.getType().getTotalSupply().multiply(new BigDecimal("0.5")).subtract(myHoldingQuantity);
         
         // availableBny는 위 세 값 중 최소값
         BigDecimal availableBny = myAccountBny

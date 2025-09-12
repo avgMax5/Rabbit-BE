@@ -18,34 +18,34 @@ public enum LinkType {
     VELOG("velog.io", "https://velog.io/favicon.ico"),
     YOUTUBE("youtube.com", "https://youtube.com/favicon.ico"),
     TWITTER("twitter.com", "https://twitter.com/favicon.ico"),
-    ELSE("*", null);
+    ETC("*", null);
     
     private final String domain;
     private final String faviconUrl;
 
     public static LinkType fromUrl(String url) {
         if (url == null || url.trim().isEmpty()) {
-            return ELSE;
+            return ETC;
         }
         
         try {
             String host = extractHost(url);
             if (host == null) {
-                return ELSE;
+                return ETC;
             }
             
             return Stream.of(values())
                     .filter(linkType -> !linkType.domain.equals("*") && 
                            (host.endsWith("." + linkType.domain) || host.equals(linkType.domain)))
                     .findFirst()
-                    .orElse(ELSE);
+                    .orElse(ETC);
         } catch (Exception e) {
-            return ELSE;
+            return ETC;
         }
     }
     
     public String getFaviconUrl(String url) {
-        if (this != ELSE) {
+        if (this != ETC) {
             return faviconUrl;
         }
         

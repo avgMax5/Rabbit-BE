@@ -7,12 +7,10 @@ import java.util.List;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Builder;
-import lombok.extern.slf4j.Slf4j;
 
 import team.avgmax.rabbit.funding.dto.data.UserFundingSummary;
 import team.avgmax.rabbit.funding.entity.FundBunny;
 
-@Slf4j
 @Builder
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record HoldingStatusResponse(
@@ -36,9 +34,6 @@ public record HoldingStatusResponse(
                     .build();
         }
         
-        log.info("userFundingSummaries: {}", userFundingSummaries);
-        log.info("totalSupply: {}", totalSupply);
-        
         // 상위 3명의 비율 계산 (전체 공급량 대비)
         Double top1 = !userFundingSummaries.isEmpty() ?
                 userFundingSummaries.get(0).totalQuantity().divide(totalSupply, 4, RoundingMode.HALF_UP).multiply(new BigDecimal("100")).doubleValue() : 0.0;
@@ -57,10 +52,8 @@ public record HoldingStatusResponse(
         Double others = othersQuantity.divide(totalSupply, 4, RoundingMode.HALF_UP).multiply(new BigDecimal("100")).doubleValue();
         
         // 남은 비율 계산 (아직 펀딩되지 않은 부분)
-        BigDecimal totalCollected = fundBunny.getCollectedBny();
-        BigDecimal remainingQuantity = totalSupply.subtract(totalCollected);
-        Double remaining = remainingQuantity.divide(totalSupply, 4, RoundingMode.HALF_UP).multiply(new BigDecimal("100")).doubleValue();
-        
+        Double remaining = 100.0 - top1 - top2 - top3 - others;
+
         return HoldingStatusResponse.builder()
                 .top1(top1)
                 .top2(top2)
