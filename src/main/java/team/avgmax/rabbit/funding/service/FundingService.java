@@ -93,8 +93,9 @@ public class FundingService {
     public Optional<FundingResponse> createFunding(String fundBunnyId, String userId, CreateFundingRequest request) {
         PersonalUser user = personalUserService.findPersonalUserById(userId);
         FundBunny fundBunny = findFundBunnyById(fundBunnyId);
+        BigDecimal myHoldingQuantity = fundingRepository.findTotalQuantityByUserAndFundBunny(user, fundBunny);
 
-        validateBnyQuantity(fundBunny, request.fundBny());
+        validateBnyQuantity(fundBunny, myHoldingQuantity, request.fundBny());
 
         Funding funding = Funding.create(fundBunny, user, request);
         user.subtractCarrot(request.fundBny().multiply(fundBunny.getType().getPrice()));
@@ -106,9 +107,7 @@ public class FundingService {
             return Optional.empty();
         }
 
-        BigDecimal myHoldingQuantity = fundingRepository.findTotalQuantityByUserAndFundBunny(user, fundBunny);
-        
-        return Optional.of(FundingResponse.from(fundingRepository.save(funding), myHoldingQuantity));
+        return Optional.of(FundingResponse.from(fundingRepository.save(funding), myHoldingQuantity.add(request.fundBny())));
     }
 
     private FundBunny findFundBunnyById(String fundBunnyId) {
@@ -152,15 +151,15 @@ public class FundingService {
         }
     }
 
-    private void validateBnyQuantity(FundBunny fundBunny, BigDecimal quantity) {
+    private void validateBnyQuantity(FundBunny fundBunny, BigDecimal myHoldingQuantity, BigDecimal quantity) {
         if (quantity.compareTo(BigDecimal.ZERO) <= 0) {
             throw new FundingException(FundingError.BNY_NOT_POSITIVE);
         }
-        if (quantity.compareTo(fundBunny.getType().getTotalSupply().multiply(new BigDecimal("0.5"))) > 0) {
-            throw new FundingException(FundingError.FUND_BNY_OVER_LIMIT);
-        }
         if (quantity.compareTo(fundBunny.getType().getTotalSupply().subtract(fundBunny.getCollectedBny())) > 0) {
-            throw new FundingException(FundingError.FUND_BNY_OVER_LIMIT);
+            throw new FundingException(FundingError.BNY_OVER_REMAINING);
+        }
+        if (myHoldingQuantity.add(quantity).compareTo(fundBunny.getType().getTotalSupply().multiply(new BigDecimal("0.5"))) > 0) {
+            throw new FundingException(FundingError.BNY_OVER_50);
         }
     }
 
