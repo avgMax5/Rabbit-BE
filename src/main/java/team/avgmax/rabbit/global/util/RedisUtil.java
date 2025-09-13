@@ -31,22 +31,4 @@ public class RedisUtil {
         redisTemplate.delete(key);
     }
 
-    /**
-     * FundBunny 만료 시간을 설정합니다.
-     * @param fundBunnyId FundBunny ID
-     * @param expirationTimeMillis 만료 시간 (밀리초)
-     */
-    public void setFundBunnyExpiration(String fundBunnyId, long expirationTimeMillis) {
-        String key = "fund_bunny:" + fundBunnyId;
-        redisTemplate.opsForValue().set(key, "expiration_marker", expirationTimeMillis, TimeUnit.MILLISECONDS);
-    }
-
-    /**
-     * FundBunny 만료 시간을 제거합니다.
-     * @param fundBunnyId FundBunny ID
-     */
-    public void removeFundBunnyExpiration(String fundBunnyId) {
-        String key = "fund_bunny:" + fundBunnyId;
-        redisTemplate.delete(key);
-    }
 }
