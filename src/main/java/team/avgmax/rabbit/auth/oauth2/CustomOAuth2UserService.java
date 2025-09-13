@@ -32,7 +32,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         String providerId;
 
         if ("naver".equals(registrationId)) {
-            Map<String, Object> response = (Map<String, Object>) attributes.get("response");
+            Map<String, Object> response = getMapAttribute(attributes, "response");
             email = (String) response.get("email");
             name = (String) response.get("name");
             providerId = (String) response.get("id");
@@ -48,8 +48,8 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
             providerId = String.valueOf(attributes.get("id"));
 
         } else if ("kakao".equals(registrationId)) {
-            Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
-            Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
+            Map<String, Object> kakaoAccount = getMapAttribute(attributes, "kakao_account");
+            Map<String, Object> profile = getMapAttribute(kakaoAccount, "profile");
 
             email = registrationId + "_" + attributes.get("id") + "@avgmax.team";
             name = profile.get("nickname").toString();
@@ -65,5 +65,10 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
         return new CustomOAuth2User(personalUser, attributes, userRequest.getClientRegistration()
                 .getProviderDetails().getUserInfoEndpoint().getUserNameAttributeName());
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> getMapAttribute(Map<String, Object> map, String key) {
+        return (Map<String, Object>) map.get(key);
     }
 }
