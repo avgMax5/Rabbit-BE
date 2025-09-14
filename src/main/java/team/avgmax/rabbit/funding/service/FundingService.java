@@ -2,6 +2,7 @@ package team.avgmax.rabbit.funding.service;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,7 @@ import team.avgmax.rabbit.user.entity.HoldBunny;
 import team.avgmax.rabbit.user.entity.PersonalUser;
 import team.avgmax.rabbit.bunny.entity.Bunny;
 import team.avgmax.rabbit.bunny.entity.enums.BunnyType;
+import team.avgmax.rabbit.global.util.RedisUtil;
 
 import java.util.regex.Pattern;
 
@@ -45,6 +47,10 @@ public class FundingService {
     private final FundBunnyRepository fundBunnyRepository;
     private final BunnyRepository bunnyRepository;
     private final HoldBunnyRepository holdBunnyRepository;
+    private final RedisUtil redisUtil;
+
+    @Value("${app.redis.fund-bunny.expiry}")
+    private final Long fundBunnyExpiry;
 
     @Transactional(readOnly = true)
     public FundBunnyCountResponse getFundBunnyCount() {
@@ -57,8 +63,12 @@ public class FundingService {
         validateAlreadyFundBunnyUser(user);
         validateBunnyName(request.bunnyName());
         validateBunnyType(request.bunnyType());
-        FundBunny fundBunny = FundBunny.create(request, user);
-        return FundBunnyResponse.from(fundBunnyRepository.save(fundBunny));
+        FundBunny fundBunny = FundBunny.create(request, user, fundBunnyExpiry);
+        FundBunny savedFundBunny = fundBunnyRepository.save(fundBunny);
+        
+        redisUtil.setData("fund_bunny:" + savedFundBunny.getId(), "expiration_marker", fundBunnyExpiry);
+        
+        return FundBunnyResponse.from(savedFundBunny);
     }
 
     @Transactional(readOnly = true)
@@ -100,14 +110,15 @@ public class FundingService {
         Funding funding = Funding.create(fundBunny, user, request);
         user.subtractCarrot(request.fundBny().multiply(fundBunny.getType().getPrice()));
         fundBunny.addBny(request.fundBny());
+        fundingRepository.save(funding);
         
         // 상장 조건 확인 및 처리
         if (fundBunny.isReadyForListing()) {
             processListing(fundBunny);
             return Optional.empty();
         }
-
-        return Optional.of(FundingResponse.from(fundingRepository.save(funding), myHoldingQuantity.add(request.fundBny())));
+        
+        return Optional.of(FundingResponse.from(funding, myHoldingQuantity));
     }
 
     private FundBunny findFundBunnyById(String fundBunnyId) {
@@ -178,7 +189,27 @@ public class FundingService {
         List<HoldBunny> holdBunnies = fundBunny.createHoldBunnies(bunny, fundings);
         holdBunnyRepository.saveAll(holdBunnies);
 
-        // 5. FundBunny 삭제 (CASCADE로 Funding도 함께 삭제)
+        // 5. Redis에서 만료 키 제거 (상장되면 만료 처리할 필요 없음)
+        redisUtil.deleteData("fund_bunny:" + fundBunny.getId());
+
+        // 6. FundBunny 삭제 (CASCADE로 Funding도 함께 삭제)
+        fundBunnyRepository.delete(fundBunny);
+    }
+
+    @Transactional
+    public void processFundBunnyExpiration(String fundBunnyId) {
+        FundBunny fundBunny = fundBunnyRepository.findById(fundBunnyId)
+                .orElseThrow(() -> new FundingException(FundingError.FUND_BUNNY_NOT_FOUND));
+
+        // 각 Funding에 대해 환불 처리
+        List<Funding> fundings = fundingRepository.findByFundBunny(fundBunny);
+        for (Funding funding : fundings) {
+            PersonalUser user = funding.getUser();
+            BigDecimal refundAmount = funding.getQuantity().multiply(fundBunny.getType().getPrice());
+            user.addCarrot(refundAmount);
+        }
+
+        // FundBunny 삭제 (CASCADE로 Funding도 함께 삭제)
         fundBunnyRepository.delete(fundBunny);
     }
 }

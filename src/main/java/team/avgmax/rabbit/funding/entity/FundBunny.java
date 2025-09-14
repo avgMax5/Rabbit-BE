@@ -46,12 +46,12 @@ public class FundBunny extends BaseTime {
     @OneToMany(mappedBy = "fundBunny", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Funding> fundings;
 
-    public static FundBunny create(CreateFundBunnyRequest request, PersonalUser user) {
+    public static FundBunny create(CreateFundBunnyRequest request, PersonalUser user, long expiryMillis) {
         return FundBunny.builder()
                 .user(user)
                 .bunnyName(request.bunnyName())
                 .type(request.bunnyType())
-                .endAt(LocalDateTime.now().plusDays(3))
+                .endAt(LocalDateTime.now().plusDays(expiryMillis / (24 * 60 * 60 * 1000)))
                 .build();
     }
 
