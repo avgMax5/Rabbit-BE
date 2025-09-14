@@ -26,6 +26,7 @@ public class FetchBunnyResponse {
 
     // 기본 정보
     private String bunnyId;
+    private String userName;
     private String bunnyName;
     private DeveloperType developerType;
     private BunnyType bunnyType;
@@ -45,10 +46,6 @@ public class FetchBunnyResponse {
     private BigDecimal Indicator4; // 지표 4 (인기형)
     private BigDecimal Indicator5; // 지표 5 (밸런스형)
 
-    // AI
-    private String aiReview;
-    private String aiFeedback;
-
     // 배지
     private List<BadgeImg> badges;
 
@@ -62,6 +59,7 @@ public class FetchBunnyResponse {
 
         return FetchBunnyResponse.builder()
                 .bunnyId(bunny.getId())
+                .userName(bunny.getUser().getName())
                 .bunnyName(bunny.getBunnyName())
                 .developerType(bunny.getDeveloperType())
                 .bunnyType(bunny.getBunnyType())
@@ -75,9 +73,6 @@ public class FetchBunnyResponse {
 //                .Indicator3(bunny.)
 //                .Indicator4(bunny.)
 //                .Indicator5(bunny.)
-                .aiReview(bunny.getAiReview())
-                .aiFeedback(bunny.getAiFeedback())
-                // 배지가 없는 버니일 경우 NullPointException 방지
                 .badges(badgeImgs)
                 .createdAt(bunny.getCreatedAt())
                 .build();

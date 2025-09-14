@@ -34,7 +34,7 @@ public class CustomOAuth2User extends DefaultOAuth2User {
         return personalUser.getRole().name();
     }
 
-    public PersonalUser getPersoanlUser() {
+    public PersonalUser getPersonalUser() {
         return personalUser;
     }
 }

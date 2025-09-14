@@ -41,7 +41,7 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
     @Value("${app.security.jwt.refresh-expiry}")
     private long refreshExpiry;
-    
+
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
                                         HttpServletResponse response,
@@ -49,7 +49,7 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         Instant now = Instant.now();
 
         CustomOAuth2User customUser = (CustomOAuth2User) authentication.getPrincipal();
-        String personalUserId = customUser.getPersoanlUser().getId();
+        String personalUserId = customUser.getPersonalUser().getId();
 
         JwtClaimsSet accessClaims = JwtClaimsSet.builder()
                 .issuer("rabbit-app")
