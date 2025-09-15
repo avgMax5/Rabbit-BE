@@ -10,6 +10,7 @@ import team.avgmax.rabbit.bunny.dto.data.ComparisonData;
 import team.avgmax.rabbit.bunny.dto.data.DailyPriceData;
 import team.avgmax.rabbit.bunny.dto.data.MyBunnyByDevTypeData;
 import team.avgmax.rabbit.bunny.dto.data.MyBunnyByHolderData;
+import team.avgmax.rabbit.bunny.dto.request.OrderRequest;
 import team.avgmax.rabbit.bunny.dto.response.ChartDataPoint;
 import team.avgmax.rabbit.bunny.dto.response.ChartResponse;
 import team.avgmax.rabbit.bunny.dto.response.FetchBunnyResponse;
@@ -22,14 +23,19 @@ import team.avgmax.rabbit.bunny.entity.enums.BunnyFilter;
 import team.avgmax.rabbit.bunny.entity.enums.BunnyType;
 import team.avgmax.rabbit.bunny.entity.enums.ChartInterval;
 import team.avgmax.rabbit.bunny.entity.enums.DeveloperType;
+import team.avgmax.rabbit.bunny.entity.*;
+import team.avgmax.rabbit.bunny.entity.enums.*;
 import team.avgmax.rabbit.bunny.exception.BunnyError;
 import team.avgmax.rabbit.bunny.exception.BunnyException;
 import team.avgmax.rabbit.bunny.repository.BadgeRepository;
 import team.avgmax.rabbit.bunny.repository.BunnyHistoryRepository;
 import team.avgmax.rabbit.bunny.repository.BunnyRepository;
 import team.avgmax.rabbit.bunny.repository.BunnyLikeRepository;
+import team.avgmax.rabbit.bunny.repository.*;
+import team.avgmax.rabbit.user.dto.response.OrderResponse;
 import team.avgmax.rabbit.user.dto.response.SpecResponse;
 import team.avgmax.rabbit.user.repository.PersonalUserRepository;
+import team.avgmax.rabbit.user.entity.HoldBunny;
 import team.avgmax.rabbit.user.entity.PersonalUser;
 import team.avgmax.rabbit.user.exception.UserError;
 import team.avgmax.rabbit.user.exception.UserException;
@@ -53,6 +59,9 @@ public class BunnyService {
     private final HoldBunnyRepository holdBunnyRepository;
     private final BunnyLikeRepository bunnyLikeRepository;
     private final PersonalUserRepository personalUserRepository;
+    private final OrderRepository orderRepository;
+    private final MatchRepository matchRepository;
+
 
     // 버니 목록 조회
     @Transactional(readOnly = true) // 읽기 전용
@@ -180,6 +189,54 @@ public class BunnyService {
     private Bunny findBunnyByName(String bunnyName) {
         return bunnyRepository.findByBunnyName(bunnyName)
                 .orElseThrow(() -> new BunnyException(BunnyError.BUNNY_NOT_FOUND));
+    }
+
+    // 거래 주문 요청
+    @Transactional
+    public OrderResponse createOrder(String bunnyName, OrderRequest request, PersonalUser personalUser) {
+        Bunny bunny = bunnyRepository.findByBunnyName(bunnyName)
+                .orElseThrow(() -> new BunnyException(BunnyError.BUNNY_NOT_FOUND));
+
+        switch (request.orderType()) {
+            case BUY -> validateBuy(request, personalUser);
+            case SELL -> validateSell(bunny, request, personalUser);
+            default -> throw new IllegalArgumentException("지원하지 않는 OrderType: " + request.orderType());
+        }
+
+        Order order = request.toEntity(personalUser, bunny);
+        orderRepository.save(order);
+
+        List<Order> candidates = (order.getOrderType() == OrderType.BUY)
+                ? orderRepository.findSellCandidatesByPriceAsc(bunny.getId(), order.getUnitPrice())
+                : orderRepository.findBuyCandidatesByPriceDesc(bunny.getId(), order.getUnitPrice());
+
+        BigDecimal remainingQty = order.getQuantity();
+
+        for (Order counter : candidates) {
+            if (isZero(remainingQty)) break;
+
+            BigDecimal counterOwnFilled = ownFilledFor(counter, bunny.getId());
+            BigDecimal counterRemaining = counter.getQuantity().subtract(counterOwnFilled);
+            if (counterRemaining.signum() <= 0) continue;
+
+            BigDecimal tradable = min(remainingQty, counterRemaining);
+            if (tradable.signum() <= 0) continue;
+
+            BigDecimal tradePrice = counter.getUnitPrice();
+
+            Match match = Match.builder()
+                    .bunny(bunny)
+                    .buyUser(order.getOrderType() == OrderType.BUY ? order.getUser() : counter.getUser())
+                    .sellUser(order.getOrderType() == OrderType.SELL ? order.getUser() : counter.getUser())
+                    .quantity(tradable)
+                    .unitPrice(tradePrice)
+                    .build();
+            matchRepository.save(match);
+
+            remainingQty = remainingQty.subtract(tradable);
+        }
+
+        return OrderResponse.from(order);
     }
 
     private List<DailyPriceData> getPriceHistory(String bunnyId) {
@@ -361,5 +418,51 @@ public class BunnyService {
                 .divide(prev, 6, RoundingMode.HALF_UP)
                 .multiply(BigDecimal.valueOf(100))
                 .setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private void validateBuy(OrderRequest request, PersonalUser personalUser) {
+        BigDecimal totalCost = request.quantity().multiply(request.unitPrice());
+
+        if (personalUser.getCarrot().compareTo(totalCost) < 0) throw new BunnyException(BunnyError.INSUFFICIENT_BALANCE);
+    }
+
+    private void validateSell(Bunny bunny, OrderRequest request, PersonalUser personalUser) {
+        BigDecimal holdingQuantity = holdBunnyRepository.findByHolderAndBunny(personalUser, bunny)
+                .map(HoldBunny::getHoldQuantity)
+                .orElse(BigDecimal.ZERO);
+
+        if (holdingQuantity.compareTo(request.quantity()) < 0) throw new BunnyException(BunnyError.INSUFFICIENT_HOLDING);
+    }
+
+    private BigDecimal ownFilledFor(Order counter, String bunnyId) {
+        BigDecimal filledCum = matchRepository.sumFilledByUserSideAndPrice(
+                bunnyId,
+                counter.getUser().getId(),
+                counter.getOrderType(),
+                counter.getUnitPrice()
+        );
+        BigDecimal prevOrdersQty = orderRepository.sumPrevOrdersQuantity(
+                bunnyId,
+                counter.getUser().getId(),
+                counter.getOrderType(),
+                counter.getUnitPrice(),
+                counter.getCreatedAt()
+        );
+
+        BigDecimal ownFilled = filledCum.subtract(prevOrdersQty);
+        if (ownFilled.signum() < 0) ownFilled = BigDecimal.ZERO;
+        if (ownFilled.compareTo(counter.getQuantity()) > 0) ownFilled = counter.getQuantity();
+        return ownFilled;
+    }
+
+    private BigDecimal remainingOf(Order o, String bunnyId) {
+        return o.getQuantity().subtract(ownFilledFor(o, bunnyId));
+    }
+
+    private static boolean isZero(BigDecimal v) {
+        return v == null || v.compareTo(BigDecimal.ZERO) == 0;
+    }
+    private static BigDecimal min(BigDecimal a, BigDecimal b) {
+        return a.compareTo(b) <= 0 ? a : b;
     }
 }
