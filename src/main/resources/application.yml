@@ -29,7 +29,14 @@ spring:
           max-idle: 8
           min-idle: 0
           max-wait: -1ms
-    
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:dummy-test-key}
+      chat:
+        options:
+          model: gpt-4.1-nano
+          temperature: 0.7         # 응답 다양성 (0.0 = 고정적, 1.0 = 창의적)
+          max-tokens: 512          # 응답 길이 제한
   security:
     oauth2:
       client:
@@ -66,7 +73,6 @@ spring:
             redirect-uri: ${GITHUB_REDIRECT_URL}
             scope: user:email
             client-name: GitHub
-
         provider:
           google:
             authorization-uri: https://accounts.google.com/o/oauth2/v2/auth

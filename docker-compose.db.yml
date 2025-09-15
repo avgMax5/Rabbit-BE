@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  mariadb:
+    image: mariadb:10.6
+    container_name: mariadb
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: 1234
+      MARIADB_DATABASE: rabbit
+      MARIADB_USER: rabbit
+      MARIADB_PASSWORD: 1234
+      TZ: Asia/Seoul
+    ports:
+      - "3306:3306"
+  redis:
+    image: redis:7.2
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
