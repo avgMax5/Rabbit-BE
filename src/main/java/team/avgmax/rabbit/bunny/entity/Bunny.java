@@ -56,6 +56,8 @@ public class Bunny extends BaseTime {
 
     private String aiFeedback;
 
+    private long likeCount;
+
     public static Bunny create(FundBunny fundBunny) {
         return Bunny.builder()
                 .user(fundBunny.getUser())
@@ -70,5 +72,13 @@ public class Bunny extends BaseTime {
                 .aiReview("") // 추후 AI API 로직 추가
                 .aiFeedback("") // 추후 AI API 로직 추가
                 .build();
+    }
+
+    public void addLikeCount() {
+        this.likeCount++;
+    }
+
+    public void subtractLikeCount() {
+        this.likeCount--;
     }
 }

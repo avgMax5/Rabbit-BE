@@ -49,6 +49,9 @@ public class FetchBunnyResponse {
     // 배지
     private List<BadgeImg> badges;
 
+    // 좋아요 수
+    private long likeCount;
+
     // 시간
     private LocalDateTime createdAt; // 생성시간
 
@@ -74,6 +77,7 @@ public class FetchBunnyResponse {
 //                .Indicator4(bunny.)
 //                .Indicator5(bunny.)
                 .badges(badgeImgs)
+                .likeCount(bunny.getLikeCount())
                 .createdAt(bunny.getCreatedAt())
                 .build();
     }

@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
-import team.avgmax.rabbit.auth.oauth2.CustomOAuth2User;
 import team.avgmax.rabbit.bunny.dto.data.ComparisonData;
 import team.avgmax.rabbit.bunny.dto.data.DailyPriceData;
 import team.avgmax.rabbit.bunny.dto.data.MyBunnyByDevTypeData;
@@ -18,6 +17,7 @@ import team.avgmax.rabbit.bunny.dto.response.MyBunnyResponse;
 import team.avgmax.rabbit.bunny.entity.Badge;
 import team.avgmax.rabbit.bunny.entity.Bunny;
 import team.avgmax.rabbit.bunny.entity.BunnyHistory;
+import team.avgmax.rabbit.bunny.entity.BunnyLike;
 import team.avgmax.rabbit.bunny.entity.enums.BunnyFilter;
 import team.avgmax.rabbit.bunny.entity.enums.BunnyType;
 import team.avgmax.rabbit.bunny.entity.enums.ChartInterval;
@@ -27,8 +27,12 @@ import team.avgmax.rabbit.bunny.exception.BunnyException;
 import team.avgmax.rabbit.bunny.repository.BadgeRepository;
 import team.avgmax.rabbit.bunny.repository.BunnyHistoryRepository;
 import team.avgmax.rabbit.bunny.repository.BunnyRepository;
+import team.avgmax.rabbit.bunny.repository.BunnyLikeRepository;
 import team.avgmax.rabbit.user.dto.response.SpecResponse;
+import team.avgmax.rabbit.user.repository.PersonalUserRepository;
 import team.avgmax.rabbit.user.entity.PersonalUser;
+import team.avgmax.rabbit.user.exception.UserError;
+import team.avgmax.rabbit.user.exception.UserException;
 import team.avgmax.rabbit.user.repository.HoldBunnyRepository;
 
 import java.math.BigDecimal;
@@ -47,7 +51,8 @@ public class BunnyService {
     private final BadgeRepository badgeRepository;
     private final BunnyHistoryRepository bunnyHistoryRepository;
     private final HoldBunnyRepository holdBunnyRepository;
-
+    private final BunnyLikeRepository bunnyLikeRepository;
+    private final PersonalUserRepository personalUserRepository;
 
     // 버니 목록 조회
     @Transactional(readOnly = true) // 읽기 전용
@@ -90,8 +95,9 @@ public class BunnyService {
 
     // 마이 버니 조회
     @Transactional(readOnly = true)
-    public MyBunnyResponse getMyBunny(CustomOAuth2User customOAuth2User) {
-        PersonalUser personalUser = customOAuth2User.getPersonalUser();
+    public MyBunnyResponse getMyBunny(String userId) {
+        PersonalUser personalUser = personalUserRepository.findById(userId)
+                .orElseThrow(() -> new UserException(UserError.USER_NOT_FOUND));
         Bunny myBunny = bunnyRepository.findByUserId(personalUser.getId())
                 .orElseThrow(() -> new BunnyException(BunnyError.BUNNY_NOT_FOUND));
 
@@ -140,6 +146,7 @@ public class BunnyService {
                 .spec(spec)
                 .aiReview(myBunny.getAiReview())
                 .aiFeedback(myBunny.getAiFeedback())
+                .likeCount(myBunny.getLikeCount())
                 .build();
     }
 
@@ -154,6 +161,25 @@ public class BunnyService {
                         .orElseGet(Collections::emptyList);
 
         return ChartResponse.from(chartData, bunny.getBunnyName(), interval);
+    }
+
+    @Transactional
+    public void addBunnyLike(String bunnyName, String userId) {
+        Bunny bunny = findBunnyByName(bunnyName);
+        bunnyLikeRepository.save(BunnyLike.create(bunny.getId(), userId));
+        bunny.addLikeCount();
+    }
+
+    @Transactional
+    public void cancelBunnyLike(String bunnyName, String userId) {
+        Bunny bunny = findBunnyByName(bunnyName);
+        bunnyLikeRepository.deleteByBunnyIdAndUserId(bunny.getId(), userId);
+        bunny.subtractLikeCount();
+    }
+
+    private Bunny findBunnyByName(String bunnyName) {
+        return bunnyRepository.findByBunnyName(bunnyName)
+                .orElseThrow(() -> new BunnyException(BunnyError.BUNNY_NOT_FOUND));
     }
 
     private List<DailyPriceData> getPriceHistory(String bunnyId) {
