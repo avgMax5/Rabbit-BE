@@ -11,6 +11,8 @@ import team.avgmax.rabbit.bunny.dto.data.ComparisonData;
 import team.avgmax.rabbit.bunny.dto.data.DailyPriceData;
 import team.avgmax.rabbit.bunny.dto.data.MyBunnyByDevTypeData;
 import team.avgmax.rabbit.bunny.dto.data.MyBunnyByHolderData;
+import team.avgmax.rabbit.bunny.dto.response.ChartDataPoint;
+import team.avgmax.rabbit.bunny.dto.response.ChartResponse;
 import team.avgmax.rabbit.bunny.dto.response.FetchBunnyResponse;
 import team.avgmax.rabbit.bunny.dto.response.MyBunnyResponse;
 import team.avgmax.rabbit.bunny.entity.Badge;
@@ -18,6 +20,7 @@ import team.avgmax.rabbit.bunny.entity.Bunny;
 import team.avgmax.rabbit.bunny.entity.BunnyHistory;
 import team.avgmax.rabbit.bunny.entity.enums.BunnyFilter;
 import team.avgmax.rabbit.bunny.entity.enums.BunnyType;
+import team.avgmax.rabbit.bunny.entity.enums.ChartInterval;
 import team.avgmax.rabbit.bunny.entity.enums.DeveloperType;
 import team.avgmax.rabbit.bunny.exception.BunnyError;
 import team.avgmax.rabbit.bunny.exception.BunnyException;
@@ -117,7 +120,7 @@ public class BunnyService {
                 .todayTime(LocalDate.now())
                 .monthlyGrowthRates(monthlyGrowRate)
                 .priceHistory(priceHistory)
-                .reliability(myBunny.getReliability())
+                .reliability(myBunny.getReliability()) // 추후 계산 로직 구상 시 구현
                 .currentPrice(myBunny.getCurrentPrice())
                 .closingPrice(myBunny.getClosingPrice())
                 .marketCap(myBunny.getMarketCap())
@@ -138,6 +141,19 @@ public class BunnyService {
                 .aiReview(myBunny.getAiReview())
                 .aiFeedback(myBunny.getAiFeedback())
                 .build();
+    }
+
+    // 거래 차트 조회
+    @Transactional(readOnly = true)
+    public ChartResponse getChart(String bunnyName, ChartInterval interval) {
+        Bunny bunny = bunnyRepository.findByBunnyName(bunnyName)
+                .orElseThrow(() -> new BunnyException(BunnyError.BUNNY_NOT_FOUND));
+
+        List<ChartDataPoint> chartData =
+                Optional.ofNullable(bunnyHistoryRepository.findChartData(bunny.getId(), interval))
+                        .orElseGet(Collections::emptyList);
+
+        return ChartResponse.from(chartData, bunny.getBunnyName(), interval);
     }
 
     private List<DailyPriceData> getPriceHistory(String bunnyId) {
@@ -300,7 +316,6 @@ public class BunnyService {
         return result;
     }
 
-    // 월별 마지막 종가만 추출
     private static Map<YearMonth, BigDecimal> extractMonthEndClosingPrices(Map<YearMonth, List<BunnyHistory>> historiesByMonth) {
         Map<YearMonth, BigDecimal> monthEndCloseByMonth = new TreeMap<>();
         for (Map.Entry<YearMonth, List<BunnyHistory>> e : historiesByMonth.entrySet()) {
@@ -312,7 +327,6 @@ public class BunnyService {
         return monthEndCloseByMonth;
     }
 
-    // 전월말 대비 성장률 계산
     private static BigDecimal calculateGrowthRate(BigDecimal prev, BigDecimal current) {
         if (prev == null || prev.compareTo(BigDecimal.ZERO) == 0 || current == null) {
             return null;

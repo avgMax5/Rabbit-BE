@@ -1,5 +1,7 @@
 package team.avgmax.rabbit.bunny.dto.response;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Builder;
 import lombok.Getter;
 import team.avgmax.rabbit.bunny.dto.data.ComparisonData;
@@ -18,6 +20,7 @@ import java.util.List;
 
 @Getter
 @Builder
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class MyBunnyResponse {
 
     // 요구사항 1: 코인명, 코인유형, 직군, 이름, 오늘날짜, 배지

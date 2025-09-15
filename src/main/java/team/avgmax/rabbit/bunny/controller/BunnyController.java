@@ -8,9 +8,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import team.avgmax.rabbit.auth.oauth2.CustomOAuth2User;
+import team.avgmax.rabbit.bunny.dto.response.ChartResponse;
 import team.avgmax.rabbit.bunny.dto.response.FetchBunnyResponse;
 import team.avgmax.rabbit.bunny.dto.response.MyBunnyResponse;
 import team.avgmax.rabbit.bunny.entity.enums.BunnyFilter;
+import team.avgmax.rabbit.bunny.entity.enums.ChartInterval;
 import team.avgmax.rabbit.bunny.service.BunnyService;
 
 import java.util.List;
@@ -46,5 +48,13 @@ public class BunnyController {
         log.info("GET 마이 버니 조회: {}", customOAuth2User.getName());
 
         return ResponseEntity.ok(bunnyService.getMyBunny(customOAuth2User));
+    }
+
+    // 거래 차트 조회
+    @GetMapping("/{bunnyName}/chart")
+    public ResponseEntity<ChartResponse> getChart(@PathVariable String bunnyName, @RequestParam(defaultValue = "DAILY") ChartInterval interval) {
+        log.info("GET 거래 차트 조회: {}, interval: {}", bunnyName, interval);
+
+        return ResponseEntity.ok(bunnyService.getChart(bunnyName, interval));
     }
 }
