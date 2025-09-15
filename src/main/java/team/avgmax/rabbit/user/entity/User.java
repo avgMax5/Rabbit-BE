@@ -31,8 +31,9 @@ public abstract class User extends BaseTime {
     }
 
     // === 업데이트 메서드 ===
-    protected void updateUser(String name, String image) {
+    protected void updateUser(String name, String image, String email) {
         if (name != null) this.name = name;
         if (image != null) this.image = image;
+        if (email != null) this.email = email;
     }
 }

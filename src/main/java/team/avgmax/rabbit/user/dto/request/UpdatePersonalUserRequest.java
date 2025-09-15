@@ -13,6 +13,7 @@ public record UpdatePersonalUserRequest(
     String name,
     LocalDate birthdate,
     String image,
+    String email,
     String resume,
     String portfolio,
     List<SnsRequest> link,

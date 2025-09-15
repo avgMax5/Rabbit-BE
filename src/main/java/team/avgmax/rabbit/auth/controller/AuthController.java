@@ -21,7 +21,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
-public class AuthController {
+public class AuthController implements AuthApiDocs {
 
     private final JwtDecoder jwtDecoder;
     private final JwtEncoder jwtEncoder;
@@ -141,6 +141,6 @@ public class AuthController {
 
         response.setHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
 
-        return ResponseEntity.ok(Map.of("message", "더미 액세스 토큰 발급"));
+        return ResponseEntity.ok(Map.of("message", "더미 액세스 토큰 발급: " + accessToken));
     }
 }

@@ -93,7 +93,7 @@ public class PersonalUser extends User {
     }
 
     public void updatePersonalUser(UpdatePersonalUserRequest request) {
-        updateUser(request.name(), request.image());
+        updateUser(request.name(), request.image(), request.email());
         this.birthdate = request.birthdate();
         this.resume = request.resume();
         this.portfolio = request.portfolio();

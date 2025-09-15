@@ -12,9 +12,11 @@ import team.avgmax.rabbit.user.entity.Skill;
 @Builder
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record PersonalUserResponse(
+        String userId,
         String name,
         LocalDate birthdate,
         String image,
+        String email,
         String resume,
         String portfolio,
         List<SnsResponse> link,
@@ -26,9 +28,11 @@ public record PersonalUserResponse(
 ) {
     public static PersonalUserResponse from(PersonalUser personalUser) {
         return PersonalUserResponse.builder()
+                .userId(personalUser.getId())
                 .name(personalUser.getName())
                 .birthdate(personalUser.getBirthdate())
                 .image(personalUser.getImage())
+                .email(personalUser.getEmail())
                 .resume(personalUser.getResume())
                 .portfolio(personalUser.getPortfolio())
                 .link(SnsResponse.from(personalUser.getSns()))

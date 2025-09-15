@@ -23,7 +23,7 @@ import team.avgmax.rabbit.user.service.PersonalUserService;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/personal")
-public class PersonalUserController {
+public class PersonalUserController implements PersonalUserApiDocs {
 
     private final PersonalUserService personalUserService;
 
@@ -38,7 +38,7 @@ public class PersonalUserController {
     @GetMapping("/me/info")
     public ResponseEntity<PersonalUserResponse> getMyInfo(@AuthenticationPrincipal Jwt jwt) {
         String personalUserId = jwt.getSubject();
-        log.info("내 정보 조회: {}", personalUserId);
+        log.info("나의 정보 조회: {}", personalUserId);
         
         return ResponseEntity.ok(personalUserService.getUserById(personalUserId));
     }
@@ -46,14 +46,14 @@ public class PersonalUserController {
     @PutMapping("/me/info")
     public ResponseEntity<PersonalUserResponse> updateMyInfo(@AuthenticationPrincipal Jwt jwt, @RequestBody UpdatePersonalUserRequest request) {
         String personalUserId = jwt.getSubject();
-        log.info("내 정보 수정 : {}", personalUserId);
+        log.info("나의 정보 수정 : {}", personalUserId);
         return ResponseEntity.ok(personalUserService.updateUserById(personalUserId, request));
     }   
 
     @GetMapping("/me/carrots")
     public ResponseEntity<CarrotsResponse> getMyCarrots(@AuthenticationPrincipal Jwt jwt) {
         String personalUserId = jwt.getSubject();
-        log.info("내 보유 캐럿 조회: {}", personalUserId);
+        log.info("보유 캐럿 조회: {}", personalUserId);
 
         return ResponseEntity.ok(personalUserService.getCarrotsById(personalUserId));
     }   
@@ -61,7 +61,7 @@ public class PersonalUserController {
     @GetMapping("/me/hold-bunnies")
     public ResponseEntity<HoldBunniesResponse> getMyHoldBunnies(@AuthenticationPrincipal Jwt jwt) {
         String personalUserId = jwt.getSubject();
-        log.info("내 보유 버니 조회: {}", personalUserId);
+        log.info("보유 버니 조회: {}", personalUserId);
 
         return ResponseEntity.ok(personalUserService.getBunniesById(personalUserId));
     }
@@ -69,7 +69,7 @@ public class PersonalUserController {
     @GetMapping("/me/orders")
     public ResponseEntity<OrdersResponse> getMyOrders(@AuthenticationPrincipal Jwt jwt) {
         String personalUserId = jwt.getSubject();
-        log.info("내 주문 조회: {}", personalUserId);  
+        log.info("미체결 주문 목록 조회: {}", personalUserId);  
 
         return ResponseEntity.ok(personalUserService.getOrdersById(personalUserId));
     }
