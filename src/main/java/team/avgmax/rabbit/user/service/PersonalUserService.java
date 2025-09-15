@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import team.avgmax.rabbit.user.dto.request.UpdatePersonalUserRequest;
 import team.avgmax.rabbit.user.dto.response.CarrotsResponse;
+import team.avgmax.rabbit.user.dto.response.FetchUserResponse;
 import team.avgmax.rabbit.user.dto.response.HoldBunniesResponse;
 import team.avgmax.rabbit.user.dto.response.OrdersResponse;
 import team.avgmax.rabbit.user.dto.response.PersonalUserResponse;
@@ -16,6 +17,8 @@ import team.avgmax.rabbit.user.exception.UserError;
 import team.avgmax.rabbit.user.exception.UserException;
 import team.avgmax.rabbit.user.entity.UserProvider;
 import team.avgmax.rabbit.user.entity.enums.ProviderType;
+import team.avgmax.rabbit.bunny.entity.Bunny;
+import team.avgmax.rabbit.bunny.repository.BunnyRepository;
 import team.avgmax.rabbit.user.repository.PersonalUserRepository;
 import team.avgmax.rabbit.user.repository.custom.HoldBunnyRepositoryCustomImpl;
 import team.avgmax.rabbit.user.repository.custom.OrderRepositoryCustomImpl;
@@ -28,6 +31,7 @@ public class PersonalUserService {
     private final PersonalUserRepository personalUserRepository;
     private final OrderRepositoryCustomImpl orderRepositoryCustom;
     private final HoldBunnyRepositoryCustomImpl holdBunnyRepositoryCustom;
+    private final BunnyRepository bunnyRepository;
 
     public PersonalUser findOrCreateUser(String email, String name, String registrationId, String providerId) {
         PersonalUser user = personalUserRepository.findByEmail(email)
@@ -50,6 +54,16 @@ public class PersonalUserService {
         }
 
         return user;
+    }
+
+    @Transactional(readOnly = true)
+    public FetchUserResponse fetchUserById(String personalUserId) {
+        PersonalUser personalUser = findPersonalUserById(personalUserId);
+        String myBunnyId = bunnyRepository.findByUserId(personalUserId)
+            .map(Bunny::getId)
+            .orElse(null);
+
+        return FetchUserResponse.from(personalUser, myBunnyId);
     }
 
     @Transactional(readOnly = true)

@@ -50,7 +50,7 @@ public class FundingService {
     private final RedisUtil redisUtil;
 
     @Value("${app.redis.fund-bunny.expiry}")
-    private final Long fundBunnyExpiry;
+    private Long fundBunnyExpiry;
 
     @Transactional(readOnly = true)
     public FundBunnyCountResponse getFundBunnyCount() {

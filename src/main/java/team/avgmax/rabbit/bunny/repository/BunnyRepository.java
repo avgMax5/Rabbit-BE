@@ -21,6 +21,6 @@ public interface BunnyRepository extends JpaRepository<Bunny, String>, BunnyRepo
     // 버니 상세 조회에 사용, Optional<>로 NullPointException 방지
     Optional<Bunny> findByBunnyName(String bunnyName);
 
-    Optional<Bunny> findByUserId(String bunnyId);
+    Optional<Bunny> findByUserId(String userId);
 
 }
