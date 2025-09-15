@@ -1,5 +1,6 @@
 package team.avgmax.rabbit.bunny.controller;
 
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -7,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import team.avgmax.rabbit.auth.oauth2.CustomOAuth2User;
 import team.avgmax.rabbit.bunny.dto.response.ChartResponse;
 import team.avgmax.rabbit.bunny.dto.response.FetchBunnyResponse;
 import team.avgmax.rabbit.bunny.dto.response.MyBunnyResponse;
@@ -44,10 +44,11 @@ public class BunnyController {
 
     // 마이 버니 조회
     @GetMapping("/me")
-    public ResponseEntity<MyBunnyResponse> getMyBunny(@AuthenticationPrincipal CustomOAuth2User customOAuth2User) {
-        log.info("GET 마이 버니 조회: {}", customOAuth2User.getName());
+    public ResponseEntity<MyBunnyResponse> getMyBunny(@AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getSubject();
+        log.info("GET 마이 버니 조회: {}", userId);
 
-        return ResponseEntity.ok(bunnyService.getMyBunny(customOAuth2User));
+        return ResponseEntity.ok(bunnyService.getMyBunny(userId));
     }
 
     // 거래 차트 조회
@@ -56,5 +57,23 @@ public class BunnyController {
         log.info("GET 거래 차트 조회: {}, interval: {}", bunnyName, interval);
 
         return ResponseEntity.ok(bunnyService.getChart(bunnyName, interval));
+    }
+
+    // 버니 좋아요 추가
+    @PostMapping("/{bunnyName}/like")
+    public ResponseEntity<Void> addBunnyLike(@AuthenticationPrincipal Jwt jwt, @PathVariable String bunnyName) {
+        String userId = jwt.getSubject();
+        log.info("POST 버니 좋아요 추가: {}", bunnyName);
+        bunnyService.addBunnyLike(bunnyName, userId);
+        return ResponseEntity.ok().build();
+    }
+
+    // 버니 좋아요 취소
+    @DeleteMapping("/{bunnyName}/like")
+    public ResponseEntity<Void> cancelBunnyLike(@AuthenticationPrincipal Jwt jwt, @PathVariable String bunnyName) {
+        String userId = jwt.getSubject();
+        log.info("DELETE 버니 좋아요 취소: {}", bunnyName);
+        bunnyService.cancelBunnyLike(bunnyName, userId);
+        return ResponseEntity.noContent().build();
     }
 }

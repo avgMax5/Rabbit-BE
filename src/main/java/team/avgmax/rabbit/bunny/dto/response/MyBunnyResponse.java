@@ -76,4 +76,7 @@ public class MyBunnyResponse {
     // 요구사항 13 : AI 개선 제안
     private String aiReview;
     private String aiFeedback;
+
+    // 요구사항 14 : 좋아요 수
+    private long likeCount;
 }
