@@ -10,11 +10,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import team.avgmax.rabbit.ai.dto.response.ScoreResponse;
-import team.avgmax.rabbit.user.dto.request.UpdatePersonalUserRequest;
-import team.avgmax.rabbit.user.dto.response.*;
 
 @Tag(name = "AI", description = "OpenAI chat API")
 public interface ChatModelApiDocs {

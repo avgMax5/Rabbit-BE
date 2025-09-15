@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import team.avgmax.rabbit.bunny.dto.response.ChartResponse;
 import team.avgmax.rabbit.bunny.dto.response.FetchBunnyResponse;
+import team.avgmax.rabbit.bunny.dto.response.OrderListResponse;
 import team.avgmax.rabbit.bunny.dto.response.MyBunnyResponse;
 import team.avgmax.rabbit.bunny.entity.enums.BunnyFilter;
 import team.avgmax.rabbit.bunny.entity.enums.ChartInterval;
@@ -57,6 +58,15 @@ public class BunnyController {
         log.info("GET 거래 차트 조회: {}, interval: {}", bunnyName, interval);
 
         return ResponseEntity.ok(bunnyService.getChart(bunnyName, interval));
+    }
+
+    // 특정 버니 마이 리스트 조회
+    @GetMapping("/{bunnyName}/mylist")
+    public ResponseEntity<OrderListResponse> getMyBunnyList(@AuthenticationPrincipal Jwt jwt, @PathVariable String bunnyName) {
+        String userId = jwt.getSubject();
+        log.info("GET 특정 버니 마이 리스트 조회: {}, userId={}", bunnyName, userId);
+
+        return ResponseEntity.ok(bunnyService.getMyBunnyList(bunnyName, userId));
     }
 
     // 버니 좋아요 추가
