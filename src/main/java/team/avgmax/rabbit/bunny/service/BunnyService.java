@@ -11,6 +11,7 @@ import team.avgmax.rabbit.bunny.dto.data.ComparisonData;
 import team.avgmax.rabbit.bunny.dto.data.DailyPriceData;
 import team.avgmax.rabbit.bunny.dto.data.MyBunnyByDevTypeData;
 import team.avgmax.rabbit.bunny.dto.data.MyBunnyByHolderData;
+import team.avgmax.rabbit.bunny.dto.request.OrderRequest;
 import team.avgmax.rabbit.bunny.dto.response.ChartDataPoint;
 import team.avgmax.rabbit.bunny.dto.response.ChartResponse;
 import team.avgmax.rabbit.bunny.dto.response.FetchBunnyResponse;
@@ -18,6 +19,7 @@ import team.avgmax.rabbit.bunny.dto.response.MyBunnyResponse;
 import team.avgmax.rabbit.bunny.entity.Badge;
 import team.avgmax.rabbit.bunny.entity.Bunny;
 import team.avgmax.rabbit.bunny.entity.BunnyHistory;
+import team.avgmax.rabbit.bunny.entity.Order;
 import team.avgmax.rabbit.bunny.entity.enums.BunnyFilter;
 import team.avgmax.rabbit.bunny.entity.enums.BunnyType;
 import team.avgmax.rabbit.bunny.entity.enums.ChartInterval;
@@ -27,6 +29,8 @@ import team.avgmax.rabbit.bunny.exception.BunnyException;
 import team.avgmax.rabbit.bunny.repository.BadgeRepository;
 import team.avgmax.rabbit.bunny.repository.BunnyHistoryRepository;
 import team.avgmax.rabbit.bunny.repository.BunnyRepository;
+import team.avgmax.rabbit.bunny.repository.OrderRepository;
+import team.avgmax.rabbit.user.dto.response.OrderResponse;
 import team.avgmax.rabbit.user.dto.response.SpecResponse;
 import team.avgmax.rabbit.user.entity.PersonalUser;
 import team.avgmax.rabbit.user.repository.HoldBunnyRepository;
@@ -47,6 +51,7 @@ public class BunnyService {
     private final BadgeRepository badgeRepository;
     private final BunnyHistoryRepository bunnyHistoryRepository;
     private final HoldBunnyRepository holdBunnyRepository;
+    private final OrderRepository orderRepository;
 
 
     // 버니 목록 조회
@@ -154,6 +159,19 @@ public class BunnyService {
                         .orElseGet(Collections::emptyList);
 
         return ChartResponse.from(chartData, bunny.getBunnyName(), interval);
+    }
+
+    // 거래 주문 요청
+    @Transactional(readOnly = true)
+    public OrderResponse createOrder(String bunnyName, OrderRequest request, PersonalUser personalUser) {
+        Bunny bunny = bunnyRepository.findByBunnyName(bunnyName)
+                .orElseThrow(() -> new BunnyException(BunnyError.BUNNY_NOT_FOUND));
+
+        Order order = request.toEntity(personalUser, bunny);
+
+        orderRepository.save(order);
+
+        return OrderResponse.from(order);
     }
 
     private List<DailyPriceData> getPriceHistory(String bunnyId) {
