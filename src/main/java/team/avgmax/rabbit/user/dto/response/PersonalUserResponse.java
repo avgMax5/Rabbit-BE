@@ -24,7 +24,8 @@ public record PersonalUserResponse(
         List<EducationResponse> education,
         List<CareerResponse> career,
         List<CertificationResponse> certification,
-        List<String> skill
+        List<String> skill,
+        String aiReview
 ) {
     public static PersonalUserResponse from(PersonalUser personalUser) {
         return PersonalUserResponse.builder()
@@ -43,6 +44,7 @@ public record PersonalUserResponse(
                 .skill(personalUser.getSkill().stream()
                         .map(Skill::getSkillName)
                         .toList())
+                .aiReview(personalUser.getAiReview())
                 .build();
     }
 }
