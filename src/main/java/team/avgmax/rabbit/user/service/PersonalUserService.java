@@ -5,11 +5,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import team.avgmax.rabbit.bunny.dto.response.OrderListResponse;
 import team.avgmax.rabbit.user.dto.request.UpdatePersonalUserRequest;
 import team.avgmax.rabbit.user.dto.response.CarrotsResponse;
 import team.avgmax.rabbit.user.dto.response.FetchUserResponse;
 import team.avgmax.rabbit.user.dto.response.HoldBunniesResponse;
-import team.avgmax.rabbit.user.dto.response.OrdersResponse;
 import team.avgmax.rabbit.user.dto.response.PersonalUserResponse;
 import team.avgmax.rabbit.user.entity.PersonalUser;
 import team.avgmax.rabbit.user.entity.enums.Role;
@@ -21,8 +21,8 @@ import team.avgmax.rabbit.bunny.entity.Bunny;
 import team.avgmax.rabbit.bunny.repository.BunnyRepository;
 import team.avgmax.rabbit.user.repository.PersonalUserRepository;
 import team.avgmax.rabbit.user.repository.custom.HoldBunnyRepositoryCustomImpl;
-import team.avgmax.rabbit.user.repository.custom.OrderRepositoryCustomImpl;
-import team.avgmax.rabbit.ai.service.ChatClientService;
+import team.avgmax.rabbit.bunny.repository.custom.OrderRepositoryCustomImpl;
+
 
 @Service
 @RequiredArgsConstructor
@@ -101,7 +101,7 @@ public class PersonalUserService {
     }
 
     @Transactional(readOnly = true)
-    public OrdersResponse getOrdersById(String personalUserId) {
+    public OrderListResponse getOrdersById(String personalUserId) {
         return orderRepositoryCustom.findOrdersByUserId(personalUserId);
     }
 
