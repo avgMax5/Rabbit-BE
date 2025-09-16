@@ -2,7 +2,6 @@ package team.avgmax.rabbit.bunny.controller;
 
 import org.springframework.security.oauth2.jwt.Jwt;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +18,7 @@ import team.avgmax.rabbit.bunny.dto.response.MyBunnyResponse;
 import team.avgmax.rabbit.bunny.entity.enums.BunnyFilter;
 import team.avgmax.rabbit.bunny.entity.enums.ChartInterval;
 import team.avgmax.rabbit.bunny.service.BunnyService;
-import team.avgmax.rabbit.user.dto.response.OrderResponse;
+import team.avgmax.rabbit.bunny.dto.response.OrderResponse;
 import team.avgmax.rabbit.user.entity.PersonalUser;
 
 import java.net.URI;
