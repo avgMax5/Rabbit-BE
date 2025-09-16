@@ -22,17 +22,19 @@ import team.avgmax.rabbit.bunny.repository.BunnyRepository;
 import team.avgmax.rabbit.user.repository.PersonalUserRepository;
 import team.avgmax.rabbit.user.repository.custom.HoldBunnyRepositoryCustomImpl;
 import team.avgmax.rabbit.user.repository.custom.OrderRepositoryCustomImpl;
+import team.avgmax.rabbit.ai.service.ChatClientService;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class PersonalUserService {
+    private final ChatClientService chatClientService;
 
     private final PersonalUserRepository personalUserRepository;
     private final OrderRepositoryCustomImpl orderRepositoryCustom;
     private final HoldBunnyRepositoryCustomImpl holdBunnyRepositoryCustom;
     private final BunnyRepository bunnyRepository;
 
+    @Transactional
     public PersonalUser findOrCreateUser(String email, String name, String registrationId, String providerId) {
         PersonalUser user = personalUserRepository.findByEmail(email)
                 .orElseGet(() -> personalUserRepository.save(
@@ -59,11 +61,11 @@ public class PersonalUserService {
     @Transactional(readOnly = true)
     public FetchUserResponse fetchUserById(String personalUserId) {
         PersonalUser personalUser = findPersonalUserById(personalUserId);
-        String myBunnyId = bunnyRepository.findByUserId(personalUserId)
-            .map(Bunny::getId)
+        String myBunnyName = bunnyRepository.findByUserId(personalUserId)
+            .map(Bunny::getBunnyName)
             .orElse(null);
 
-        return FetchUserResponse.from(personalUser, myBunnyId);
+        return FetchUserResponse.from(personalUser, myBunnyName);
     }
 
     @Transactional(readOnly = true)
@@ -73,11 +75,15 @@ public class PersonalUserService {
         return PersonalUserResponse.from(personalUser);
     }
 
+    @Transactional
     public PersonalUserResponse updateUserById(String personalUserId, UpdatePersonalUserRequest request) {
         PersonalUser personalUser = findPersonalUserById(personalUserId);
         
         personalUser.updatePersonalUser(request);
         PersonalUser savedUser = personalUserRepository.save(personalUser);
+
+        String aiReview = chatClientService.getAiReviewOfUserProfile(savedUser);
+        savedUser.updateAiReview(aiReview);
 
         return PersonalUserResponse.from(savedUser);
     }

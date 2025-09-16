@@ -14,16 +14,16 @@ public record FetchUserResponse (
     String image,
     String role,
     String carrot,
-    String myBunnyId
+    String myBunnyName
 ) {
-    public static FetchUserResponse from(PersonalUser personalUser, String myBunnyId) {
+    public static FetchUserResponse from(PersonalUser personalUser, String myBunnyName) {
         return FetchUserResponse.builder()
                 .userId(personalUser.getId())
                 .name(personalUser.getName())
                 .image(personalUser.getImage())
                 .role(personalUser.getRole().name())
                 .carrot(personalUser.getCarrot().toString())
-                .myBunnyId(myBunnyId)
+                .myBunnyName(myBunnyName)
                 .build();
     }
 }
