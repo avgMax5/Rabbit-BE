@@ -18,13 +18,13 @@ import java.util.Map;
 public interface AuthApiDocs {
 
     @Operation(
-        summary = "리프레시 토큰 발급",
-        description = "액세스 토큰이 만료되어 새로운 리프레시 토큰을 발급받습니다."
+        summary = "엑세스 토큰 발급",
+        description = "액세스 토큰이 만료되어 새로운 엑세스 토큰을 발급받습니다."
     )
     @ApiResponses(value = {
         @ApiResponse(
             responseCode = "200",
-            description = "리프레시 토큰 발급 성공",
+            description = "엑세스 토큰 발급 성공",
             content = @Content(
                 mediaType = "application/json",
                 examples = @ExampleObject(

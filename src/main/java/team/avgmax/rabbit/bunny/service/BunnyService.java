@@ -14,10 +14,13 @@ import team.avgmax.rabbit.bunny.dto.response.ChartDataPoint;
 import team.avgmax.rabbit.bunny.dto.response.ChartResponse;
 import team.avgmax.rabbit.bunny.dto.response.FetchBunnyResponse;
 import team.avgmax.rabbit.bunny.dto.response.MyBunnyResponse;
+import team.avgmax.rabbit.bunny.dto.response.OrderListResponse;
+import team.avgmax.rabbit.bunny.dto.response.OrderResponse;
 import team.avgmax.rabbit.bunny.entity.Badge;
 import team.avgmax.rabbit.bunny.entity.Bunny;
 import team.avgmax.rabbit.bunny.entity.BunnyHistory;
 import team.avgmax.rabbit.bunny.entity.BunnyLike;
+import team.avgmax.rabbit.bunny.entity.Order;
 import team.avgmax.rabbit.bunny.entity.enums.BunnyFilter;
 import team.avgmax.rabbit.bunny.entity.enums.BunnyType;
 import team.avgmax.rabbit.bunny.entity.enums.ChartInterval;
@@ -28,6 +31,7 @@ import team.avgmax.rabbit.bunny.repository.BadgeRepository;
 import team.avgmax.rabbit.bunny.repository.BunnyHistoryRepository;
 import team.avgmax.rabbit.bunny.repository.BunnyRepository;
 import team.avgmax.rabbit.bunny.repository.BunnyLikeRepository;
+import team.avgmax.rabbit.bunny.repository.OrderRepository;
 import team.avgmax.rabbit.user.dto.response.SpecResponse;
 import team.avgmax.rabbit.user.repository.PersonalUserRepository;
 import team.avgmax.rabbit.user.entity.PersonalUser;
@@ -53,6 +57,8 @@ public class BunnyService {
     private final HoldBunnyRepository holdBunnyRepository;
     private final BunnyLikeRepository bunnyLikeRepository;
     private final PersonalUserRepository personalUserRepository;
+    private final OrderRepository orderRepository;
+
 
     // 버니 목록 조회
     @Transactional(readOnly = true) // 읽기 전용
@@ -163,6 +169,22 @@ public class BunnyService {
         return ChartResponse.from(chartData, bunny.getBunnyName(), interval);
     }
 
+    // 특정 버니 마이 리스트 조회
+    @Transactional(readOnly = true)
+    public OrderListResponse getMyBunnyList(String bunnyName, String userId) {
+        Bunny bunny = findBunnyByName(bunnyName);
+
+        List<Order> orders = orderRepository.findAllByBunnyIdAndUserId(bunny.getId(), userId);
+
+        List<OrderResponse> ordersResponse = orders.stream()
+                .map(OrderResponse::from)
+                .toList();
+
+        OrderListResponse myBunnyList = OrderListResponse.from(ordersResponse);
+        return myBunnyList;
+    }
+
+    // 좋아요 추가
     @Transactional
     public void addBunnyLike(String bunnyName, String userId) {
         Bunny bunny = findBunnyByName(bunnyName);
@@ -170,6 +192,7 @@ public class BunnyService {
         bunny.addLikeCount();
     }
 
+    // 좋아요 취소
     @Transactional
     public void cancelBunnyLike(String bunnyName, String userId) {
         Bunny bunny = findBunnyByName(bunnyName);
