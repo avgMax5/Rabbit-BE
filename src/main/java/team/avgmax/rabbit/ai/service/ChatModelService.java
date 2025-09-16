@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import team.avgmax.rabbit.ai.dto.response.ScoreResponse;
 import team.avgmax.rabbit.user.entity.PersonalUser;
 import team.avgmax.rabbit.user.entity.Skill;
-import team.avgmax.rabbit.user.service.PersonalUserService;
 
 import java.util.stream.Collectors;
 
@@ -23,7 +22,6 @@ import java.util.stream.Collectors;
 public class ChatModelService {
 
     private final ChatModel chatModel;
-    private final PersonalUserService personalUserService;
 
     public String ask(String q) {
         UserMessage userMessage = new UserMessage(q);
@@ -33,8 +31,7 @@ public class ChatModelService {
         return response.getResult().getOutput().getText();
     }
 
-    public ScoreResponse score(String personalUserId) {
-        PersonalUser personalUser = personalUserService.findPersonalUserById(personalUserId);
+    public ScoreResponse score(PersonalUser personalUser) {
 
         BeanOutputConverter<ScoreResponse> responseConverter =
                 new BeanOutputConverter<>(ScoreResponse.class);
@@ -89,6 +86,10 @@ public class ChatModelService {
         Prompt prompt = new Prompt(systemMessage, userMessage);
         ChatResponse response = chatModel.call(prompt);
 
-        return responseConverter.convert(response.getResult().getOutput().getText());
+        String responseText = response.getResult().getOutput().getText();
+        if (responseText == null) {
+            throw new IllegalStateException("AI 응답이 null입니다.");
+        }
+        return responseConverter.convert(responseText);
     }
 }

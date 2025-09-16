@@ -9,9 +9,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.RequestParam;
 import team.avgmax.rabbit.ai.dto.response.ScoreResponse;
+import team.avgmax.rabbit.auth.oauth2.CustomOAuth2User;
 
 @Tag(name = "AI", description = "OpenAI chat API")
 public interface ChatModelApiDocs {
@@ -33,7 +33,7 @@ public interface ChatModelApiDocs {
             )
     })
     ResponseEntity<String> ask(
-            @Parameter(description = "JWT 토큰", hidden = true) Jwt jwt,
+            @Parameter(description = "JWT 토큰", hidden = true) CustomOAuth2User customOAuth2User,
             @Parameter(description = "사용자가 입력한 질문") @RequestParam String answer
     );
 
@@ -63,6 +63,6 @@ public interface ChatModelApiDocs {
         )
     })
     ResponseEntity<ScoreResponse> score(
-        @Parameter(description = "JWT 토큰", hidden = true) Jwt jwt
+        @Parameter(description = "JWT 토큰", hidden = true) CustomOAuth2User customOAuth2User
     );
 }

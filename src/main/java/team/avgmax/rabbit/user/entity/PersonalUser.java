@@ -75,6 +75,8 @@ public class PersonalUser extends User {
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Education> education = new ArrayList<>();
 
+    String aiReview;
+
     // === 연관관계 편의 메서드 ===
     public void addProvider(UserProvider provider) {
         providers.add(provider);
@@ -128,5 +130,9 @@ public class PersonalUser extends User {
         this.education.addAll(request.education().stream()
             .map(Education::create)
             .toList());
+    }
+
+    public void updateAiReview(String aiReview) {
+        this.aiReview = aiReview;
     }
 }
