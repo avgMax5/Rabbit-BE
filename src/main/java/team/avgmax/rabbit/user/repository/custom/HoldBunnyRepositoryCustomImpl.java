@@ -1,5 +1,6 @@
 package team.avgmax.rabbit.user.repository.custom;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import com.querydsl.core.Tuple;
@@ -78,6 +79,26 @@ public class HoldBunnyRepositoryCustomImpl implements HoldBunnyRepositoryCustom 
                 .where(holdBunny.bunny.id.eq(bunnyId))
                 .groupBy(holderBunny.developerType)
                 .fetch();
+    }
+
+    @Override
+    public void addHoldForUpdate(String userId, String bunnyId, BigDecimal deltaQty) {
+        QHoldBunny hold = QHoldBunny.holdBunny;
+
+        long updated = queryFactory.update(hold)
+                .set(hold.holdQuantity, hold.holdQuantity.add(deltaQty))
+                .where(
+                        hold.holder.id.eq(userId),
+                        hold.bunny.id.eq(bunnyId)
+                )
+                .execute();
+
+        if (updated == 0 && deltaQty.signum() > 0) {
+            queryFactory.insert(hold)
+                    .columns(hold.holder.id, hold.bunny.id, hold.holdQuantity, hold.totalBuyAmount)
+                    .values(userId, bunnyId, deltaQty, BigDecimal.ZERO) // totalBuyAmount는 상황에 맞게
+                    .execute();
+        }
     }
 
 }

@@ -15,27 +15,21 @@ import team.avgmax.rabbit.bunny.dto.response.ChartDataPoint;
 import team.avgmax.rabbit.bunny.dto.response.ChartResponse;
 import team.avgmax.rabbit.bunny.dto.response.FetchBunnyResponse;
 import team.avgmax.rabbit.bunny.dto.response.MyBunnyResponse;
-import team.avgmax.rabbit.bunny.entity.Badge;
-import team.avgmax.rabbit.bunny.entity.Bunny;
-import team.avgmax.rabbit.bunny.entity.BunnyHistory;
-import team.avgmax.rabbit.bunny.entity.BunnyLike;
+import team.avgmax.rabbit.bunny.dto.response.OrderListResponse;
+import team.avgmax.rabbit.bunny.dto.response.OrderResponse;
+import team.avgmax.rabbit.bunny.entity.*;
 import team.avgmax.rabbit.bunny.entity.enums.BunnyFilter;
 import team.avgmax.rabbit.bunny.entity.enums.BunnyType;
+import team.avgmax.rabbit.bunny.entity.enums.OrderType;
 import team.avgmax.rabbit.bunny.entity.enums.ChartInterval;
 import team.avgmax.rabbit.bunny.entity.enums.DeveloperType;
-import team.avgmax.rabbit.bunny.entity.*;
-import team.avgmax.rabbit.bunny.entity.enums.*;
 import team.avgmax.rabbit.bunny.exception.BunnyError;
 import team.avgmax.rabbit.bunny.exception.BunnyException;
-import team.avgmax.rabbit.bunny.repository.BadgeRepository;
-import team.avgmax.rabbit.bunny.repository.BunnyHistoryRepository;
-import team.avgmax.rabbit.bunny.repository.BunnyRepository;
-import team.avgmax.rabbit.bunny.repository.BunnyLikeRepository;
 import team.avgmax.rabbit.bunny.repository.*;
-import team.avgmax.rabbit.user.dto.response.OrderResponse;
+import team.avgmax.rabbit.global.policy.FeePolicy;
 import team.avgmax.rabbit.user.dto.response.SpecResponse;
-import team.avgmax.rabbit.user.repository.PersonalUserRepository;
 import team.avgmax.rabbit.user.entity.HoldBunny;
+import team.avgmax.rabbit.user.repository.PersonalUserRepository;
 import team.avgmax.rabbit.user.entity.PersonalUser;
 import team.avgmax.rabbit.user.exception.UserError;
 import team.avgmax.rabbit.user.exception.UserException;
@@ -172,6 +166,22 @@ public class BunnyService {
         return ChartResponse.from(chartData, bunny.getBunnyName(), interval);
     }
 
+    // 특정 버니 마이 리스트 조회
+    @Transactional(readOnly = true)
+    public OrderListResponse getMyBunnyList(String bunnyName, String userId) {
+        Bunny bunny = findBunnyByName(bunnyName);
+
+        List<Order> orders = orderRepository.findAllByBunnyIdAndUserId(bunny.getId(), userId);
+
+        List<OrderResponse> ordersResponse = orders.stream()
+                .map(OrderResponse::from)
+                .toList();
+
+        OrderListResponse myBunnyList = OrderListResponse.from(ordersResponse);
+        return myBunnyList;
+    }
+
+    // 좋아요 추가
     @Transactional
     public void addBunnyLike(String bunnyName, String userId) {
         Bunny bunny = findBunnyByName(bunnyName);
@@ -179,6 +189,7 @@ public class BunnyService {
         bunny.addLikeCount();
     }
 
+    // 좋아요 취소
     @Transactional
     public void cancelBunnyLike(String bunnyName, String userId) {
         Bunny bunny = findBunnyByName(bunnyName);
@@ -193,22 +204,28 @@ public class BunnyService {
 
     // 거래 주문 요청
     @Transactional
-    public OrderResponse createOrder(String bunnyName, OrderRequest request, PersonalUser personalUser) {
+    public OrderResponse createOrder(String bunnyName, OrderRequest request, PersonalUser principal) {
         Bunny bunny = bunnyRepository.findByBunnyName(bunnyName)
                 .orElseThrow(() -> new BunnyException(BunnyError.BUNNY_NOT_FOUND));
 
-        switch (request.orderType()) {
-            case BUY -> validateBuy(request, personalUser);
-            case SELL -> validateSell(bunny, request, personalUser);
-            default -> throw new IllegalArgumentException("지원하지 않는 OrderType: " + request.orderType());
+        PersonalUser user = personalUserRepository.findByIdForUpdate(principal.getId());
+
+        if (request.orderType() == OrderType.SELL) {
+            holdBunnyRepository.findByHolderAndBunnyForUpdate(user, bunny);
         }
 
-        Order order = request.toEntity(personalUser, bunny);
+        switch (request.orderType()) {
+            case BUY -> validateBuy(request, user);
+            case SELL -> validateSell(bunny, request, user);
+            default -> throw new IllegalArgumentException("지원하지 않는 타입");
+        }
+
+        Order order = request.toEntity(user, bunny);
         orderRepository.save(order);
 
         List<Order> candidates = (order.getOrderType() == OrderType.BUY)
-                ? orderRepository.findSellCandidatesByPriceAsc(bunny.getId(), order.getUnitPrice())
-                : orderRepository.findBuyCandidatesByPriceDesc(bunny.getId(), order.getUnitPrice());
+                ? orderRepository.findSellCandidatesByPriceAsc(bunny.getId(), order.getUnitPrice(), user.getId())
+                : orderRepository.findBuyCandidatesByPriceDesc(bunny.getId(), order.getUnitPrice(), user.getId());
 
         BigDecimal remainingQty = order.getQuantity();
 
@@ -223,6 +240,7 @@ public class BunnyService {
             if (tradable.signum() <= 0) continue;
 
             BigDecimal tradePrice = counter.getUnitPrice();
+            BigDecimal tradeAmount = tradable.multiply(tradePrice);
 
             Match match = Match.builder()
                     .bunny(bunny)
@@ -232,6 +250,17 @@ public class BunnyService {
                     .unitPrice(tradePrice)
                     .build();
             matchRepository.save(match);
+
+            PersonalUser buyer  = match.getBuyUser();
+            PersonalUser seller = match.getSellUser();
+
+            // 매수자: 보유 수량 증가 (BUY는 캐럿/수수료는 동결로 처리했으므로 여기서는 수량만)
+            holdBunnyRepository.addHoldForUpdate(buyer.getId(), bunny.getId(), tradable);
+
+            // 매도자: 보유 수량 감소 + 캐럿 입금(수수료 차감)
+            BigDecimal sellerFee = FeePolicy.calcFee(tradeAmount);
+            holdBunnyRepository.addHoldForUpdate(seller.getId(), bunny.getId(), tradable.negate());
+            personalUserRepository.addCarrotForUpdate(seller.getId(), tradeAmount.subtract(sellerFee));
 
             remainingQty = remainingQty.subtract(tradable);
         }
@@ -420,43 +449,86 @@ public class BunnyService {
                 .setScale(2, RoundingMode.HALF_UP);
     }
 
-    private void validateBuy(OrderRequest request, PersonalUser personalUser) {
-        BigDecimal totalCost = request.quantity().multiply(request.unitPrice());
+    private void validateBuy(OrderRequest request, PersonalUser user) {
+        // 주문 총액(수수료 포함) = 수량 × 단가 × (1 + feeRate)
+        BigDecimal orderCost = request.quantity().multiply(request.unitPrice()).multiply(BigDecimal.ONE.add(FeePolicy.FEE_RATE));
 
-        if (personalUser.getCarrot().compareTo(totalCost) < 0) throw new BunnyException(BunnyError.INSUFFICIENT_BALANCE);
+        // 미체결 매수 주문들의 동결 금액(수수료 포함)
+        BigDecimal reserved = sumOpenBuyReservedAmount(user.getId());
+
+        BigDecimal available = user.getCarrot().subtract(reserved);
+
+        if (available.compareTo(orderCost) < 0) throw new BunnyException(BunnyError.INSUFFICIENT_BALANCE);
     }
 
-    private void validateSell(Bunny bunny, OrderRequest request, PersonalUser personalUser) {
-        BigDecimal holdingQuantity = holdBunnyRepository.findByHolderAndBunny(personalUser, bunny)
+    private void validateSell(Bunny bunny, OrderRequest request, PersonalUser user) {
+        // 현재 보유 수량
+        BigDecimal holding = holdBunnyRepository.findByHolderAndBunny(user, bunny)
                 .map(HoldBunny::getHoldQuantity)
                 .orElse(BigDecimal.ZERO);
 
-        if (holdingQuantity.compareTo(request.quantity()) < 0) throw new BunnyException(BunnyError.INSUFFICIENT_HOLDING);
+        // 이미 걸려 있는 매도 주문들의 잔여 수량 합 (예약된 수량)
+        BigDecimal reservedQty = sumOpenSellReservedQty(user.getId(), bunny.getId());
+
+        BigDecimal availableQty = holding.subtract(reservedQty);
+
+        if (availableQty.compareTo(request.quantity()) < 0) throw new BunnyException(BunnyError.INSUFFICIENT_HOLDING);
     }
 
-    private BigDecimal ownFilledFor(Order counter, String bunnyId) {
-        BigDecimal filledCum = matchRepository.sumFilledByUserSideAndPrice(
-                bunnyId,
-                counter.getUser().getId(),
-                counter.getOrderType(),
-                counter.getUnitPrice()
-        );
-        BigDecimal prevOrdersQty = orderRepository.sumPrevOrdersQuantity(
-                bunnyId,
-                counter.getUser().getId(),
-                counter.getOrderType(),
-                counter.getUnitPrice(),
-                counter.getCreatedAt()
-        );
-
-        BigDecimal ownFilled = filledCum.subtract(prevOrdersQty);
-        if (ownFilled.signum() < 0) ownFilled = BigDecimal.ZERO;
-        if (ownFilled.compareTo(counter.getQuantity()) > 0) ownFilled = counter.getQuantity();
-        return ownFilled;
+    private BigDecimal remainingOf(Order order, String bunnyId) {
+        return order.getQuantity().subtract(ownFilledFor(order, bunnyId));
     }
 
-    private BigDecimal remainingOf(Order o, String bunnyId) {
-        return o.getQuantity().subtract(ownFilledFor(o, bunnyId));
+    private BigDecimal ownFilledFor(Order order, String bunnyId) {
+        BigDecimal cum = matchRepository.sumFilledByUserSideAndPrice(
+                bunnyId,
+                order.getUser().getId(),
+                order.getOrderType(),
+                order.getUnitPrice()
+        );
+        BigDecimal prev = orderRepository.sumPrevOrdersQuantity(
+                bunnyId,
+                order.getUser().getId(),
+                order.getOrderType(),
+                order.getUnitPrice(),
+                order.getCreatedAt()
+        );
+
+        BigDecimal own = cum.subtract(prev);
+        if (own.signum() < 0) own = BigDecimal.ZERO;
+        if (own.compareTo(order.getQuantity()) > 0) own = order.getQuantity();
+        return own;
+    }
+
+    private BigDecimal sumOpenBuyReservedAmount(String userId) {
+        List<Order> orders = orderRepository
+                .findAllByUserAndSideOrderByCreatedAtAsc(userId, OrderType.BUY);
+
+        BigDecimal total = BigDecimal.ZERO;
+        for (Order order : orders) {
+            BigDecimal rem = remainingOf(order, order.getBunny().getId());
+            if (rem.signum() > 0) {
+                BigDecimal costWithFee = rem
+                        .multiply(order.getUnitPrice())
+                        .multiply(BigDecimal.ONE.add(FeePolicy.FEE_RATE));
+                total = total.add(costWithFee);
+            }
+        }
+        return total;
+    }
+
+    private BigDecimal sumOpenSellReservedQty(String userId, String bunnyId) {
+        List<Order> orders = orderRepository
+                .findAllByUserAndBunnyAndSideOrderByCreatedAtAsc(userId, bunnyId, OrderType.SELL);
+
+        BigDecimal total = BigDecimal.ZERO;
+        for (Order o : orders) {
+            BigDecimal rem = remainingOf(o, bunnyId);
+            if (rem.signum() > 0) {
+                total = total.add(rem); // 잔여 수량 누적
+            }
+        }
+        return total;
     }
 
     private static boolean isZero(BigDecimal v) {

@@ -1,4 +1,4 @@
-package team.avgmax.rabbit.user.repository.custom;
+package team.avgmax.rabbit.bunny.repository.custom;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -11,11 +11,11 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 
 import lombok.RequiredArgsConstructor;
 
+import team.avgmax.rabbit.bunny.dto.response.OrderListResponse;
+import team.avgmax.rabbit.bunny.dto.response.OrderResponse;
 import team.avgmax.rabbit.bunny.entity.Order;
 import team.avgmax.rabbit.bunny.entity.QOrder;
 import team.avgmax.rabbit.bunny.entity.enums.OrderType;
-import team.avgmax.rabbit.user.dto.response.OrderResponse;
-import team.avgmax.rabbit.user.dto.response.OrdersResponse;
 
 @Repository
 @RequiredArgsConstructor
@@ -23,7 +23,7 @@ public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public OrdersResponse findOrdersByUserId(String personalUserId) {
+    public OrderListResponse findOrdersByUserId(String personalUserId) {
         QOrder order = QOrder.order;
 
         List<OrderResponse> orders = queryFactory
@@ -38,13 +38,13 @@ public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
                 .where(order.user.id.eq(personalUserId))
                 .fetch();
 
-        return OrdersResponse.builder()
+        return OrderListResponse.builder()
                 .orders(orders)
                 .build();
     }
 
     @Override
-    public List<Order> findSellCandidatesByPriceAsc(String bunnyId, BigDecimal buyPrice) {
+    public List<Order> findSellCandidatesByPriceAsc(String bunnyId, BigDecimal buyPrice, String excludeUserId) {
         QOrder order = QOrder.order;
 
         return queryFactory
@@ -52,14 +52,15 @@ public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
                 .where(
                         order.bunny.id.eq(bunnyId),
                         order.orderType.eq(OrderType.SELL),
-                        order.unitPrice.loe(buyPrice)
+                        order.unitPrice.loe(buyPrice),
+                        order.user.id.ne(excludeUserId)
                 )
                 .orderBy(order.unitPrice.asc(), order.createdAt.asc())
                 .fetch();
     }
 
     @Override
-    public List<Order> findBuyCandidatesByPriceDesc(String bunnyId, BigDecimal sellPrice) {
+    public List<Order> findBuyCandidatesByPriceDesc(String bunnyId, BigDecimal sellPrice, String excludeUserId) {
         QOrder order = QOrder.order;
 
         return queryFactory
@@ -67,7 +68,8 @@ public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
                 .where(
                         order.bunny.id.eq(bunnyId),
                         order.orderType.eq(OrderType.BUY),
-                        order.unitPrice.goe(sellPrice)
+                        order.unitPrice.goe(sellPrice),
+                        order.user.id.ne(excludeUserId)
                 )
                 .orderBy(order.unitPrice.desc(), order.createdAt.asc())
                 .fetch();
@@ -89,6 +91,31 @@ public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
                 .fetchOne();
 
         return sum != null ? sum : BigDecimal.ZERO;
+    }
+
+    @Override
+    public List<Order> findAllByUserAndSideOrderByCreatedAtAsc(String userId, OrderType side) {
+        QOrder order = QOrder.order;
+        return queryFactory.selectFrom(order)
+                .where(
+                        order.user.id.eq(userId),
+                        order.orderType.eq(side)
+                )
+                .orderBy(order.createdAt.asc())
+                .fetch();
+    }
+
+    @Override
+    public List<Order> findAllByUserAndBunnyAndSideOrderByCreatedAtAsc(String userId, String bunnyId, OrderType side) {
+        QOrder order = QOrder.order;
+        return queryFactory.selectFrom(order)
+                .where(
+                        order.user.id.eq(userId),
+                        order.bunny.id.eq(bunnyId),
+                        order.orderType.eq(side)
+                )
+                .orderBy(order.createdAt.asc())
+                .fetch();
     }
 
 }

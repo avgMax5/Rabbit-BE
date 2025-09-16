@@ -2,7 +2,6 @@ package team.avgmax.rabbit.bunny.controller;
 
 import org.springframework.security.oauth2.jwt.Jwt;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -14,11 +13,12 @@ import team.avgmax.rabbit.auth.oauth2.CustomOAuth2User;
 import team.avgmax.rabbit.bunny.dto.request.OrderRequest;
 import team.avgmax.rabbit.bunny.dto.response.ChartResponse;
 import team.avgmax.rabbit.bunny.dto.response.FetchBunnyResponse;
+import team.avgmax.rabbit.bunny.dto.response.OrderListResponse;
 import team.avgmax.rabbit.bunny.dto.response.MyBunnyResponse;
 import team.avgmax.rabbit.bunny.entity.enums.BunnyFilter;
 import team.avgmax.rabbit.bunny.entity.enums.ChartInterval;
 import team.avgmax.rabbit.bunny.service.BunnyService;
-import team.avgmax.rabbit.user.dto.response.OrderResponse;
+import team.avgmax.rabbit.bunny.dto.response.OrderResponse;
 import team.avgmax.rabbit.user.entity.PersonalUser;
 
 import java.net.URI;
@@ -64,6 +64,15 @@ public class BunnyController {
         log.info("GET 거래 차트 조회: {}, interval: {}", bunnyName, interval);
 
         return ResponseEntity.ok(bunnyService.getChart(bunnyName, interval));
+    }
+
+    // 특정 버니 마이 리스트 조회
+    @GetMapping("/{bunnyName}/mylist")
+    public ResponseEntity<OrderListResponse> getMyBunnyList(@AuthenticationPrincipal Jwt jwt, @PathVariable String bunnyName) {
+        String userId = jwt.getSubject();
+        log.info("GET 특정 버니 마이 리스트 조회: {}, userId={}", bunnyName, userId);
+
+        return ResponseEntity.ok(bunnyService.getMyBunnyList(bunnyName, userId));
     }
 
     // 버니 좋아요 추가

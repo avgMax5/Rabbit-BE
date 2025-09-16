@@ -14,7 +14,6 @@ import team.avgmax.rabbit.user.dto.request.UpdatePersonalUserRequest;
 import team.avgmax.rabbit.user.dto.response.CarrotsResponse;
 import team.avgmax.rabbit.user.dto.response.FetchUserResponse;
 import team.avgmax.rabbit.user.dto.response.HoldBunniesResponse;
-import team.avgmax.rabbit.user.dto.response.OrdersResponse;
 import team.avgmax.rabbit.user.dto.response.PersonalUserResponse;
 
 @Tag(name = "PersonalUser", description = "개인 사용자 API")
