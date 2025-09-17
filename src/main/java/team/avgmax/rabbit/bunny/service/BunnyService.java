@@ -268,6 +268,26 @@ public class BunnyService {
         return OrderResponse.from(order);
     }
 
+    @Transactional
+    public void cancelOrder(String bunnyName, String orderId, PersonalUser principal) {
+        Bunny bunny = bunnyRepository.findByBunnyName(bunnyName)
+                .orElseThrow(() -> new BunnyException(BunnyError.BUNNY_NOT_FOUND));
+
+        Order order = orderRepository.findByIdAndBunnyIdForUpdate(orderId, bunny.getId());
+        if (order == null) throw new BunnyException(BunnyError.ORDER_NOT_FOUND);
+
+        if (!order.getUser().getId().equals(principal.getId())) {
+            throw new BunnyException(BunnyError.FORBIDDEN);
+        }
+
+        BigDecimal remaining = remainingOf(order, bunny.getId());
+        if (isZero(remaining)) {
+            throw new BunnyException(BunnyError.ORDER_ALREADY_FILLED);
+        }
+
+        orderRepository.delete(order);
+    }
+
     private List<DailyPriceData> getPriceHistory(String bunnyId) {
         List<BunnyHistory> bunnyHistories = bunnyHistoryRepository.findAllByBunnyIdOrderByDateAsc(bunnyId);
 

@@ -109,4 +109,19 @@ public class BunnyController {
 
         return ResponseEntity.created(location).body(response);
     }
+
+    // 거래 주문 취소
+    @DeleteMapping("/{bunnyName}/orders/{orderId}")
+    public ResponseEntity<Void> cancelOrder(
+            @PathVariable String bunnyName,
+            @PathVariable String orderId,
+            @AuthenticationPrincipal CustomOAuth2User user
+    ) {
+        log.info("DELETE 거래 주문 취소 : bunny={}, orderId={}, user={}", bunnyName, orderId, user.getName());
+
+        PersonalUser principal = user.getPersonalUser();
+        bunnyService.cancelOrder(bunnyName, orderId, principal);
+
+        return ResponseEntity.noContent().build();
+    }
 }

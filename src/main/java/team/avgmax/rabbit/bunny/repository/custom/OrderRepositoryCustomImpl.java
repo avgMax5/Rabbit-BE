@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import jakarta.persistence.LockModeType;
 import org.springframework.stereotype.Repository;
 
 import com.querydsl.core.types.Projections;
@@ -116,6 +117,20 @@ public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
                 )
                 .orderBy(order.createdAt.asc())
                 .fetch();
+    }
+
+    @Override
+    public Order findByIdAndBunnyIdForUpdate(String orderId, String bunnyId) {
+        QOrder order = QOrder.order;
+
+        return queryFactory
+                .selectFrom(order)
+                .where(
+                        order.id.eq(orderId),
+                        order.bunny.id.eq(bunnyId)
+                )
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                .fetchFirst();
     }
 
 }

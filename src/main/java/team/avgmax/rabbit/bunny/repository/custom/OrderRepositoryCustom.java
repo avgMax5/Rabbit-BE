@@ -20,4 +20,6 @@ public interface OrderRepositoryCustom {
     List<Order> findAllByUserAndSideOrderByCreatedAtAsc(String userId, OrderType side);
 
     List<Order> findAllByUserAndBunnyAndSideOrderByCreatedAtAsc(String userId, String bunnyId, OrderType side);
+
+    Order findByIdAndBunnyIdForUpdate(String orderId, String bunnyId);
 }
