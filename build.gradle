@@ -71,6 +71,9 @@ dependencies {
 
 	// minio
 	implementation 'com.amazonaws:aws-java-sdk-s3:1.12.780'
+
+	// Spring-WebSocket
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 }
 
 // QueryDSL 설정

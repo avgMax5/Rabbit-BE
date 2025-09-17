@@ -3,7 +3,9 @@ package team.avgmax.rabbit.bunny.repository.custom;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
+import com.querydsl.jpa.impl.JPAQuery;
 import jakarta.persistence.LockModeType;
 import org.springframework.stereotype.Repository;
 
@@ -131,6 +133,42 @@ public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
                 )
                 .setLockMode(LockModeType.PESSIMISTIC_WRITE)
                 .fetchFirst();
+    }
+
+    @Override
+    public List<Order> findAllByBunnyAndSideForOrderBook(String bunnyId, OrderType side) {
+        QOrder order = QOrder.order;
+        int maxRows = 50;
+
+        JPAQuery<Order> query = queryFactory
+                .selectFrom(order)
+                .where(
+                        order.bunny.id.eq(bunnyId),
+                        order.orderType.eq(side)
+                );
+
+        if (side == OrderType.BUY) {
+            query.orderBy(order.unitPrice.desc(), order.createdAt.asc(), order.id.asc());
+        } else {
+            query.orderBy(order.unitPrice.asc(), order.createdAt.asc(), order.id.asc());
+        }
+
+        return query.limit(maxRows)
+                .fetch();
+    }
+
+    @Override
+    public List<Order> findAllByBunnySideAndPriceIn(String bunnyId, OrderType side, Set<BigDecimal> prices) {
+        QOrder order = QOrder.order;
+
+        return queryFactory
+                .selectFrom(order)
+                .where(
+                        order.bunny.id.eq(bunnyId),
+                        order.orderType.eq(side),
+                        order.unitPrice.in(prices)
+                )
+                .fetch();
     }
 
 }
