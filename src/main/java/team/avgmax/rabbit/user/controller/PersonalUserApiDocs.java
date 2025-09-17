@@ -10,11 +10,13 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.jwt.Jwt;
+
 import team.avgmax.rabbit.user.dto.request.UpdatePersonalUserRequest;
 import team.avgmax.rabbit.user.dto.response.CarrotsResponse;
 import team.avgmax.rabbit.user.dto.response.FetchUserResponse;
 import team.avgmax.rabbit.user.dto.response.HoldBunniesResponse;
 import team.avgmax.rabbit.user.dto.response.PersonalUserResponse;
+import team.avgmax.rabbit.bunny.dto.response.OrderListResponse;
 
 @Tag(name = "PersonalUser", description = "개인 사용자 API")
 public interface PersonalUserApiDocs {
@@ -351,7 +353,7 @@ public interface PersonalUserApiDocs {
             description = "미체결 주문 목록 조회 성공",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = OrdersResponse.class),
+                schema = @Schema(implementation = OrderListResponse.class),
                 examples = @ExampleObject(
                     value = """
                     {
@@ -379,7 +381,7 @@ public interface PersonalUserApiDocs {
             )
         )
     })
-    ResponseEntity<OrdersResponse> getMyOrders(
+    ResponseEntity<OrderListResponse> getMyOrders(
         @Parameter(description = "JWT 토큰", hidden = true) Jwt jwt
     );
 }
