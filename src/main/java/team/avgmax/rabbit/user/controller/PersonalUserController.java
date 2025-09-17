@@ -16,6 +16,7 @@ import team.avgmax.rabbit.user.dto.response.CarrotsResponse;
 import team.avgmax.rabbit.user.dto.response.FetchUserResponse;
 import team.avgmax.rabbit.user.dto.response.HoldBunniesResponse;
 import team.avgmax.rabbit.user.dto.response.PersonalUserResponse;
+import team.avgmax.rabbit.bunny.dto.response.OrderListResponse;
 import team.avgmax.rabbit.user.service.PersonalUserService;
 
 @Slf4j
@@ -66,7 +67,7 @@ public class PersonalUserController implements PersonalUserApiDocs {
     }
 
     @GetMapping("/me/orders")
-    public ResponseEntity<OrdersResponse> getMyOrders(@AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<OrderListResponse> getMyOrders(@AuthenticationPrincipal Jwt jwt) {
         String personalUserId = jwt.getSubject();
         log.info("미체결 주문 목록 조회: {}", personalUserId);  
 
