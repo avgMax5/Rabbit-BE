@@ -45,7 +45,7 @@ public class SecurityConfig {
             .formLogin(AbstractHttpConfigurer::disable)
             .httpBasic(AbstractHttpConfigurer::disable)
             .oauth2Login(oauth2 -> oauth2
-                .authorizationEndpoint(endpoint -> endpoint.baseUri("/oauth2/authorization")) // 기본값
+                .authorizationEndpoint(endpoint -> endpoint.baseUri("/oauth2/authorization"))
                 .redirectionEndpoint(redirection -> redirection.baseUri("/login/oauth2/code/*"))
                 .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                 .successHandler(customSuccessHandler)
@@ -71,11 +71,9 @@ public class SecurityConfig {
 
     @Bean
     Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter() {
-        // 1) scope/scp -> SCOPE_*
-        var scopeConverter = new JwtGrantedAuthoritiesConverter(); // 기본값
+        var scopeConverter = new JwtGrantedAuthoritiesConverter(); // Scopes
 
-        // 2) roles -> 그대로(이미 ROLE_* 이므로 prefix 추가 X)
-        var rolesConverter = new JwtGrantedAuthoritiesConverter();
+        var rolesConverter = new JwtGrantedAuthoritiesConverter(); // Roles
         rolesConverter.setAuthoritiesClaimName("roles");
         rolesConverter.setAuthorityPrefix("");
 
