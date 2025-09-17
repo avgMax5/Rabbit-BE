@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.querydsl.jpa.impl.JPAQuery;
 import jakarta.persistence.LockModeType;
 import org.springframework.stereotype.Repository;
 
@@ -131,6 +132,27 @@ public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
                 )
                 .setLockMode(LockModeType.PESSIMISTIC_WRITE)
                 .fetchFirst();
+    }
+
+    @Override
+    public List<Order> findAllByBunnyAndSideForOrderBook(String bunnyId, OrderType side, int maxRows) {
+        QOrder order = QOrder.order;
+
+        JPAQuery<Order> query = queryFactory
+                .selectFrom(order)
+                .where(
+                        order.bunny.id.eq(bunnyId),
+                        order.orderType.eq(side)
+                );
+
+        if (side == OrderType.BUY) {
+            query.orderBy(order.unitPrice.desc(), order.createdAt.asc(), order.id.asc());
+        } else {
+            query.orderBy(order.unitPrice.asc(), order.createdAt.asc(), order.id.asc());
+        }
+
+        return query.limit(maxRows)
+                .fetch();
     }
 
 }

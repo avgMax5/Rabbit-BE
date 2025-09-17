@@ -68,6 +68,9 @@ dependencies {
 	implementation 'org.springframework.ai:spring-ai-openai'
 	implementation 'org.springframework.ai:spring-ai-starter-model-openai'
 	implementation 'org.springframework.ai:spring-ai-advisors-vector-store'
+
+	// Spring-WebSocket
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 }
 
 // QueryDSL 설정
