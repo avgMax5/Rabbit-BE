@@ -22,8 +22,8 @@ public class SwaggerConfig {
                         .version("1.0.0")
                 )
                 .servers(List.of(
-                        new Server().url("https://rabbit.avgmax.team").description("운영 서버"),
-                        new Server().url("http://localhost:8080").description("개발 서버")
+                        new Server().url("https://rabbit.avgmax.team/api").description("운영 서버"),
+                        new Server().url("http://localhost:8080/api").description("개발 서버")
                 ))
                 .components(new io.swagger.v3.oas.models.Components()
                         .addSecuritySchemes("bearerAuth", new SecurityScheme()

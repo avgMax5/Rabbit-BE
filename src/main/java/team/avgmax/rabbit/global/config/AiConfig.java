@@ -18,6 +18,15 @@ public class AiConfig {
     @Value("${spring.ai.openai.api-key}")
     private String openAiApiKey;
 
+    @Value("${spring.ai.openai.chat.options.model}")
+    private String openAiModel;
+
+    @Value("${spring.ai.openai.chat.options.temperature}")
+    private Double openAiTemperature;
+
+    @Value("${spring.ai.openai.chat.options.max-tokens}")
+    private Integer openAiMaxTokens;    
+
     @Bean
     OpenAiApi openAiApi() {
         return OpenAiApi.builder()
@@ -31,9 +40,9 @@ public class AiConfig {
         return OpenAiChatModel.builder()
                 .openAiApi(openAiApi)
                 .defaultOptions(OpenAiChatOptions.builder()
-                        .model("gpt-4o-mini")
-                        .temperature(0.7)
-                        .maxTokens(512)
+                        .model(openAiModel)
+                        .temperature(openAiTemperature)
+                        .maxTokens(openAiMaxTokens)
                         .build())
                 .build();
     }
