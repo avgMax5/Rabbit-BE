@@ -68,6 +68,9 @@ dependencies {
 	implementation 'org.springframework.ai:spring-ai-openai'
 	implementation 'org.springframework.ai:spring-ai-starter-model-openai'
 	implementation 'org.springframework.ai:spring-ai-advisors-vector-store'
+
+	// minio
+	implementation 'com.amazonaws:aws-java-sdk-s3:1.12.780'
 }
 
 // QueryDSL 설정
