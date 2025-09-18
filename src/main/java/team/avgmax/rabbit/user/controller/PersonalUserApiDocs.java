@@ -51,116 +51,110 @@ public interface PersonalUserApiDocs {
         @Parameter(description = "JWT 토큰", hidden = true) Jwt jwt
     );
 
-    @Operation(
-        summary = "나의 정보 조회",
-        description = "현재 로그인한 사용자의 상세 정보를 조회합니다."
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "나의 정보 조회 성공",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = PersonalUserResponse.class),
-                examples = @ExampleObject(
-                    value = """
-                    {
-                        "user_id": "01HZXUSER00000000000000001",
-                        "name": "사용자_01",
-                        "birthdate": "1990-01-25",
-                        "image": "https://picsum.photos/200",
-                        "email": "user01@test.com",
-                        "resume": "https://example.com/resume.pdf",
-                        "portfolio": "https://example.com/portfolio.pdf",
-                        "link": [
-                            {
-                                "sns_id": "01HZXSNS00000000000000001",
-                                "url": "https://github.com/jjweidon",
-                                "type": "GITHUB",
-                                "favicon": "https://github.com/favicon"
-                            },
-                            {
-                                "sns_id": "01HZXSNS00000000000000002",
-                                "url": "https:/instagram.com/jwoong_8",
-                                "type": "INSTAGRAM",
-                                "favicon": "https:/instagram.com/favicon",
-                            },
-                            {
-                                "sns_id": "01HZXSNS00000000000000003",
-                                "url": "https:/linkedin.com/jwoong_8",
-                                "type": "LINKEDIN",
-                                "favicon": "https:/linkedin.com/favicon",
-                            },
-                        ],
-                        "position": "BACKEND",
-                        "education": [
-                            {   
-                                "education_id": "01HZXEDUCATION00000000000000001",
-                                "school_name": "신한고등학교",
-                                "status": "GRADUATED",
-                                "major": "자연계",
-                                "start_date": "2020-09-01",
-                                "end_date": "2023-06-30",
-                                "certificate_url": "https://example.com/certificate.pdf"
-                            },
-                            {
-                                "education_id": "01HZXEDUCATION00000000000000002",
-                                "school_name": "신한대학교",
-                                "status": "ENROLLED",
-                                "major": "컴퓨터공학과",
-                                "start_date": "2020-09-01",
-                                "end_date": "2023-06-30",
-                                "certificate_url": "https://example.com/certificate.pdf"
-                            }
-                        ],
-                        "career": [
-                            {
-                                "career_id": "01HZXCAREER00000000000000001",
-                                "company_name": "신한은행",
-                                "status": "UNEMPLOYED",
-                                "position": "마케터", 
-                                "start_date": "2023-09-01",
-                                "end_date": "2025-12-31",
-                                "certificate_url": "https://example.com/certificate.pdf"
-                            },
-                            {
-                                "career_id": "01HZXCAREER00000000000000002",
-                                "company_name": "신한DS",
-                                "status": "EMPLOYED",
-                                "position": "백엔드 엔지니어",
-                                "start_date": "2023-09-01",
-                                "end_date": "2025-12-31",
-                                "certificate_url": "https://example.com/certificate.pdf"
-                            }
-                        ],
-                        "certification": [
-                            {
-                                "certification_id": "01HZXCERTIFICATION00000000000000001",
-                                "certificate_url": "https://fileurl.com",
-                                "name": "정보처리기사",
-                                "ca": "에이비지맥스",
-                                "cdate": "2015-09-01"
-                            },
-                            {
-                                "certification_id": "01HZXCERTIFICATION00000000000000002",
-                                "certificate_url": "https://fileurl.com",
-                                "name": "SQLD",
-                                "ca": "에이비지맥스",
-                                "cdate": "2015-09-02"
-                            },
-                        ],
-                        "skill": [
-                            "Java",
-                            "Javascript",
-                            "SpringBoot",
-                            "React"
-                        ]
-                    }
-                    """
-                )
+    @ApiResponse(
+        responseCode = "200",
+        description = "나의 정보 조회 성공",
+        content = @Content(
+            mediaType = "application/json",
+            schema = @Schema(implementation = PersonalUserResponse.class),
+            examples = @ExampleObject(
+                value = """
+                {
+                    "user_id": "01HZXUSER00000000000000001",
+                    "name": "사용자_01",
+                    "birthdate": "1990-01-25",
+                    "image": "https://picsum.photos/200",
+                    "email": "user01@test.com",
+                    "resume": "https://example.com/resume.pdf",
+                    "portfolio": "https://example.com/portfolio.pdf",
+                    "link": [
+                        {
+                            "sns_id": "01HZXSNS00000000000000001",
+                            "url": "https://github.com/jjweidon",
+                            "type": "GITHUB",
+                            "favicon": "https://github.com/favicon"
+                        },
+                        {
+                            "sns_id": "01HZXSNS00000000000000002",
+                            "url": "https://instagram.com/jwoong_8",
+                            "type": "INSTAGRAM",
+                            "favicon": "https://instagram.com/favicon"
+                        },
+                        {
+                            "sns_id": "01HZXSNS00000000000000003",
+                            "url": "https://linkedin.com/jwoong_8",
+                            "type": "LINKEDIN",
+                            "favicon": "https://linkedin.com/favicon"
+                        }
+                    ],
+                    "position": "BACKEND",
+                    "education": [
+                        {
+                            "education_id": "01HZXEDUCATION00000000000000001",
+                            "school_name": "신한고등학교",
+                            "status": "GRADUATED",
+                            "major": "자연계",
+                            "start_date": "2020-09-01",
+                            "end_date": "2023-06-30",
+                            "certificate_url": "https://example.com/certificate.pdf"
+                        },
+                        {
+                            "education_id": "01HZXEDUCATION00000000000000002",
+                            "school_name": "신한대학교",
+                            "status": "ENROLLED",
+                            "major": "컴퓨터공학과",
+                            "start_date": "2020-09-01",
+                            "end_date": "2023-06-30",
+                            "certificate_url": "https://example.com/certificate.pdf"
+                        }
+                    ],
+                    "career": [
+                        {
+                            "career_id": "01HZXCAREER00000000000000001",
+                            "company_name": "신한은행",
+                            "status": "UNEMPLOYED",
+                            "position": "마케터",
+                            "start_date": "2023-09-01",
+                            "end_date": "2025-12-31",
+                            "certificate_url": "https://example.com/certificate.pdf"
+                        },
+                        {
+                            "career_id": "01HZXCAREER00000000000000002",
+                            "company_name": "신한DS",
+                            "status": "EMPLOYED",
+                            "position": "백엔드 엔지니어",
+                            "start_date": "2023-09-01",
+                            "end_date": "2025-12-31",
+                            "certificate_url": "https://example.com/certificate.pdf"
+                        }
+                    ],
+                    "certification": [
+                        {
+                            "certification_id": "01HZXCERTIFICATION00000000000000001",
+                            "certificate_url": "https://fileurl.com",
+                            "name": "정보처리기사",
+                            "ca": "에이비지맥스",
+                            "cdate": "2015-09-01"
+                        },
+                        {
+                            "certification_id": "01HZXCERTIFICATION00000000000000002",
+                            "certificate_url": "https://fileurl.com",
+                            "name": "SQLD",
+                            "ca": "에이비지맥스",
+                            "cdate": "2015-09-02"
+                        }
+                    ],
+                    "skill": [
+                        "Java",
+                        "Javascript",
+                        "SpringBoot",
+                        "React"
+                    ]
+                }
+                """
             )
         )
-    })
+    )
     ResponseEntity<PersonalUserResponse> getMyInfo(
         @Parameter(description = "JWT 토큰", hidden = true) Jwt jwt
     );
@@ -197,14 +191,14 @@ public interface PersonalUserApiDocs {
                                 "sns_id": "01HZXSNS00000000000000002",
                                 "link": "https:/instagram.com/jwoong_8",
                                 "type": "INSTAGRAM",
-                                "favicon": "https:/instagram.com/favicon",
+                                "favicon": "https:/instagram.com/favicon"
                             },
                             {
                                 "sns_id": "01HZXSNS00000000000000003",
                                 "link": "https:/linkedin.com/jwoong_8",
                                 "type": "LINKEDIN",
-                                "favicon": "https:/linkedin.com/favicon",
-                            },
+                                "favicon": "https:/linkedin.com/favicon"
+                            }
                         ],
                         "position": "BACKEND",
                         "education": [
@@ -261,7 +255,7 @@ public interface PersonalUserApiDocs {
                                 "name": "SQLD",
                                 "ca": "에이비지맥스",
                                 "cdate": "2015-09-02"
-                            },
+                            }
                         ],
                         "skill": [
                             "Java",
