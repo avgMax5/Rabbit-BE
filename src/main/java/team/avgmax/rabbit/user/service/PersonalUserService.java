@@ -2,10 +2,14 @@ package team.avgmax.rabbit.user.service;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import team.avgmax.rabbit.ai.service.ChatClientService;
+import team.avgmax.rabbit.bunny.dto.response.MatchListResponse;
+import team.avgmax.rabbit.bunny.dto.response.MatchResponse;
 import team.avgmax.rabbit.bunny.dto.response.OrderListResponse;
 import team.avgmax.rabbit.user.dto.request.UpdatePersonalUserRequest;
 import team.avgmax.rabbit.user.dto.response.CarrotsResponse;
@@ -19,9 +23,11 @@ import team.avgmax.rabbit.user.exception.UserException;
 import team.avgmax.rabbit.user.entity.UserProvider;
 import team.avgmax.rabbit.user.entity.enums.ProviderType;
 import team.avgmax.rabbit.bunny.entity.Bunny;
+import team.avgmax.rabbit.bunny.entity.Match;
 import team.avgmax.rabbit.bunny.repository.BunnyRepository;
 import team.avgmax.rabbit.user.repository.PersonalUserRepository;
 import team.avgmax.rabbit.user.repository.custom.HoldBunnyRepositoryCustomImpl;
+import team.avgmax.rabbit.bunny.repository.custom.MatchRepositoryCustomImpl;
 import team.avgmax.rabbit.bunny.repository.custom.OrderRepositoryCustomImpl;
 
 
@@ -32,6 +38,7 @@ public class PersonalUserService {
 
     private final PersonalUserRepository personalUserRepository;
     private final OrderRepositoryCustomImpl orderRepositoryCustom;
+    private final MatchRepositoryCustomImpl matchRepositoryCustom;
     private final HoldBunnyRepositoryCustomImpl holdBunnyRepositoryCustom;
     private final BunnyRepository bunnyRepository;
 
@@ -110,5 +117,15 @@ public class PersonalUserService {
     public PersonalUser findPersonalUserById(String userId) {
         return personalUserRepository.findById(userId)
                 .orElseThrow(() -> new UserException(UserError.USER_NOT_FOUND));
+    }
+
+    @Transactional(readOnly = true)
+    public MatchListResponse getMatchesById(String personalUserId){
+        List<Match> matches = matchRepositoryCustom.findMatchesByUserId(personalUserId);
+        List<MatchResponse> matchResponses = matches.stream()
+            .map(match -> MatchResponse.from(match, personalUserId))
+            .toList();
+   
+        return MatchListResponse.from(matchResponses);
     }
 }

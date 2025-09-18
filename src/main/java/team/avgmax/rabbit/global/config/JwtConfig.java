@@ -1,4 +1,4 @@
-package team.avgmax.rabbit.auth.config;
+package team.avgmax.rabbit.global.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

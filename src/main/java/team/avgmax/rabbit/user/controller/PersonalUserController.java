@@ -16,6 +16,7 @@ import team.avgmax.rabbit.user.dto.response.CarrotsResponse;
 import team.avgmax.rabbit.user.dto.response.FetchUserResponse;
 import team.avgmax.rabbit.user.dto.response.HoldBunniesResponse;
 import team.avgmax.rabbit.user.dto.response.PersonalUserResponse;
+import team.avgmax.rabbit.bunny.dto.response.MatchListResponse;
 import team.avgmax.rabbit.bunny.dto.response.OrderListResponse;
 import team.avgmax.rabbit.user.service.PersonalUserService;
 
@@ -72,6 +73,14 @@ public class PersonalUserController implements PersonalUserApiDocs {
         log.info("미체결 주문 목록 조회: {}", personalUserId);  
 
         return ResponseEntity.ok(personalUserService.getOrdersById(personalUserId));
+    }
+
+    @GetMapping("/me/matches")
+    public ResponseEntity<MatchListResponse> getMyMatches(@AuthenticationPrincipal Jwt jwt) {
+        String personalUserId = jwt.getSubject();
+        log.info("체결 주문 목록 조회: {}", personalUserId);  
+
+        return ResponseEntity.ok(personalUserService.getMatchesById(personalUserId));
     }
 
 }
