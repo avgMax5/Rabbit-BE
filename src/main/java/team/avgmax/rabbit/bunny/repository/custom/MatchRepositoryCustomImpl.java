@@ -27,6 +27,7 @@ public class MatchRepositoryCustomImpl implements MatchRepositoryCustom{
                 .fetch();
     }
 
+    @Override
     public BigDecimal sumFilledByUserSideAndPrice(String bunnyId, String userId, OrderType side, BigDecimal price) {
         QMatch match = QMatch.match;
         BooleanExpression userSideExpr =
@@ -42,5 +43,18 @@ public class MatchRepositoryCustomImpl implements MatchRepositoryCustom{
                 .fetchOne();
 
         return sum != null ? sum : BigDecimal.ZERO;
+    }
+
+    @Override
+    public BigDecimal findLastTradePriceByBunnyId(String bunnyId) {
+        QMatch m = QMatch.match;
+
+        // createdAt desc, id desc 로 최신 체결 1건의 가격
+        return queryFactory
+                .select(m.unitPrice)
+                .from(m)
+                .where(m.bunny.id.eq(bunnyId))
+                .orderBy(m.createdAt.desc(), m.id.desc())
+                .fetchFirst();
     }
 }
