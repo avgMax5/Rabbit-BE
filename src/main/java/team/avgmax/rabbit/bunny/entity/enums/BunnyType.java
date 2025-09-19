@@ -16,13 +16,13 @@ public enum BunnyType {
     ),
     B(
         "밸런스형",
-        BigDecimal.valueOf(10_000_000),
+        BigDecimal.valueOf(100_000_000),
         BigDecimal.valueOf(100_000),
         BigDecimal.valueOf(1_000)
     ),
     C(
         "단가 친화형",
-        BigDecimal.valueOf(10_000_000),
+        BigDecimal.valueOf(100_000_000),
         BigDecimal.valueOf(1_000_000),
         BigDecimal.valueOf(100)
     );
