@@ -1,7 +1,5 @@
 package team.avgmax.rabbit.bunny.dto.orderBook;
 
-import team.avgmax.rabbit.bunny.entity.Bunny;
-
 import java.math.BigDecimal;
 import java.util.List;
 

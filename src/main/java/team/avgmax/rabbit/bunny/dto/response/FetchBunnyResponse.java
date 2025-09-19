@@ -7,16 +7,13 @@ import lombok.Builder;
 import lombok.Getter;
 import team.avgmax.rabbit.bunny.entity.Badge;
 import team.avgmax.rabbit.bunny.entity.Bunny;
-import team.avgmax.rabbit.bunny.entity.enums.BadgeImg;
 import team.avgmax.rabbit.bunny.entity.enums.BunnyType;
 import team.avgmax.rabbit.bunny.entity.enums.DeveloperType;
 import team.avgmax.rabbit.user.entity.enums.Position;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Getter
 @Builder
@@ -40,14 +37,14 @@ public class FetchBunnyResponse {
     private BigDecimal fluctuationRate; // 등락률
 
     // 지표 (Entity 지표 미정)
-    private BigDecimal Indicator1; // 지표 1 (성장형 이었던 것)
-    private BigDecimal Indicator2; // 지표 2 (안정형)
-    private BigDecimal Indicator3; // 지표 3 (가치형)
-    private BigDecimal Indicator4; // 지표 4 (인기형)
-    private BigDecimal Indicator5; // 지표 5 (밸런스형)
+    private int growth; // 지표 1 (성장성)
+    private int stability; // 지표 2 (안정성)
+    private int value; // 지표 3 (가치)
+    private int popularity; // 지표 4 (인기)
+    private int balance; // 지표 5 (밸런스)
 
     // 배지
-    private List<BadgeImg> badges;
+    private List<String> badges;
 
     // 좋아요 수
     private long likeCount;
@@ -55,28 +52,24 @@ public class FetchBunnyResponse {
     // 시간
     private LocalDateTime createdAt; // 생성시간
 
-    public static FetchBunnyResponse from(Bunny bunny, List<Badge> badges) {
-        List<BadgeImg> badgeImgs = (badges != null)
-                ? badges.stream().map(Badge::getBadgeImg).collect(Collectors.toList())
-                : Collections.emptyList(); // NullPointException 을 대비하면서 null 이면 빈 list 를 사용할 수 있도록 함.
-
+    public static FetchBunnyResponse from(Bunny bunny) {
         return FetchBunnyResponse.builder()
                 .bunnyId(bunny.getId())
                 .userName(bunny.getUser().getName())
                 .bunnyName(bunny.getBunnyName())
                 .developerType(bunny.getDeveloperType())
                 .bunnyType(bunny.getBunnyType())
-                .position(bunny.getPosition())
+                .position(bunny.getUser().getPosition())
                 .reliability(bunny.getReliability())
                 .currentPrice(bunny.getCurrentPrice())
                 .closingPrice(bunny.getClosingPrice())
                 .marketCap(bunny.getMarketCap())
-//                .Indicator1(bunny.)
-//                .Indicator2(bunny.)
-//                .Indicator3(bunny.)
-//                .Indicator4(bunny.)
-//                .Indicator5(bunny.)
-                .badges(badgeImgs)
+                .growth(bunny.getGrowth())
+                .stability(bunny.getStability())
+                .value(bunny.getValue())
+                .popularity(bunny.getPopularity())
+                .balance(bunny.getBalance())
+                .badges(bunny.getBadges().stream().map(Badge::getBadgeImg).toList())
                 .likeCount(bunny.getLikeCount())
                 .createdAt(bunny.getCreatedAt())
                 .build();

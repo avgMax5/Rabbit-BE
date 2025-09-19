@@ -40,7 +40,7 @@ public interface PersonalUserApiDocs {
                         "image": "https://picsum.photos/200",
                         "role": "ROLE_USER",
                         "carrot": "1000000",
-                        "my_bunny_id": "01HZXBUNNY00000000000000001"
+                        "my_bunny_name": "bunny-001"
                     }
                     """
                 )
@@ -72,19 +72,19 @@ public interface PersonalUserApiDocs {
                             "sns_id": "01HZXSNS00000000000000001",
                             "url": "https://github.com/jjweidon",
                             "type": "GITHUB",
-                            "favicon": "https://github.com/favicon"
+                            "favicon": "https://github.com/favicon.ico"
                         },
                         {
                             "sns_id": "01HZXSNS00000000000000002",
                             "url": "https://instagram.com/jwoong_8",
                             "type": "INSTAGRAM",
-                            "favicon": "https://instagram.com/favicon"
+                            "favicon": "https://instagram.com/favicon.ico"
                         },
                         {
                             "sns_id": "01HZXSNS00000000000000003",
                             "url": "https://linkedin.com/jwoong_8",
                             "type": "LINKEDIN",
-                            "favicon": "https://linkedin.com/favicon"
+                            "favicon": "https://linkedin.com/favicon.ico"
                         }
                     ],
                     "position": "BACKEND",
@@ -185,19 +185,19 @@ public interface PersonalUserApiDocs {
                                 "sns_id": "01HZXSNS00000000000000001",
                                 "link": "https://github.com/jjweidon",
                                 "type": "GITHUB",
-                                "favicon": "https://github.com/favicon"
+                                "favicon": "https://github.com/favicon.ico"
                             },
                             {
                                 "sns_id": "01HZXSNS00000000000000002",
                                 "link": "https:/instagram.com/jwoong_8",
                                 "type": "INSTAGRAM",
-                                "favicon": "https:/instagram.com/favicon"
+                                "favicon": "https:/instagram.com/favicon.ico"
                             },
                             {
                                 "sns_id": "01HZXSNS00000000000000003",
                                 "link": "https:/linkedin.com/jwoong_8",
                                 "type": "LINKEDIN",
-                                "favicon": "https:/linkedin.com/favicon"
+                                "favicon": "https:/linkedin.com/favicon.ico"
                             }
                         ],
                         "position": "BACKEND",

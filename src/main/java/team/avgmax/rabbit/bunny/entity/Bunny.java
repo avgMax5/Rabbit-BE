@@ -10,9 +10,10 @@ import team.avgmax.rabbit.bunny.entity.enums.DeveloperType;
 import team.avgmax.rabbit.funding.entity.FundBunny;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 import team.avgmax.rabbit.user.entity.PersonalUser;
-import team.avgmax.rabbit.user.entity.enums.Position;
 
 @Entity
 @Getter
@@ -26,7 +27,7 @@ public class Bunny extends BaseTime {
     @Builder.Default
     private String id = UlidGenerator.generateMonotonic();
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private PersonalUser user;
 
@@ -38,9 +39,6 @@ public class Bunny extends BaseTime {
 
     @Enumerated(EnumType.STRING)
     private BunnyType bunnyType;
-   
-    @Enumerated(EnumType.STRING)
-    private Position position;
 
     private BigDecimal reliability;
 
@@ -50,7 +48,15 @@ public class Bunny extends BaseTime {
 
     private BigDecimal marketCap;
 
-    // 5가지 성장 지표 추후 추가
+    private int growth;
+
+    private int stability;
+
+    private int value;
+
+    private int popularity;
+
+    private int balance;
     
     private String aiReview;
 
@@ -58,13 +64,17 @@ public class Bunny extends BaseTime {
 
     private long likeCount;
 
+    @Builder.Default
+    @JoinColumn(name = "bunny_id")
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Badge> badges = new ArrayList<>();
+
     public static Bunny create(FundBunny fundBunny) {
         return Bunny.builder()
                 .user(fundBunny.getUser())
                 .bunnyName(fundBunny.getBunnyName())
-                .developerType(DeveloperType.GROWTH) // 추후 기본값 지정
+                .developerType(DeveloperType.UNDEFINED)
                 .bunnyType(fundBunny.getType())
-                .position(fundBunny.getUser().getPosition())
                 .reliability(BigDecimal.ZERO) // 추후 계산 로직 추가
                 .currentPrice(fundBunny.getType().getPrice())
                 .closingPrice(fundBunny.getType().getPrice())

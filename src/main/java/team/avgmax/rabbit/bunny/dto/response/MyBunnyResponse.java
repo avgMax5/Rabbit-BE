@@ -8,7 +8,6 @@ import team.avgmax.rabbit.bunny.dto.data.ComparisonData;
 import team.avgmax.rabbit.bunny.dto.data.DailyPriceData;
 import team.avgmax.rabbit.bunny.dto.data.MyBunnyByDevTypeData;
 import team.avgmax.rabbit.bunny.dto.data.MyBunnyByHolderData;
-import team.avgmax.rabbit.bunny.entity.Badge;
 import team.avgmax.rabbit.bunny.entity.enums.BunnyType;
 import team.avgmax.rabbit.bunny.entity.enums.DeveloperType;
 import team.avgmax.rabbit.user.dto.response.SpecResponse;
@@ -32,7 +31,7 @@ public class MyBunnyResponse {
     private BunnyType bunnyType; // 버니 유형 (희소, 밸런스, 단가)
     private DeveloperType developerType; //  개발자 유형
     private Position position; // 직군
-    private List<Badge> badges; // 배지
+    private List<String> badges; // 배지
     private LocalDate todayTime; // 오늘 날짜
 
     // 요구사항 2: 성장성(차트)
@@ -57,11 +56,11 @@ public class MyBunnyResponse {
     private BigDecimal myGrowthRate;
 
     // 요구사항 7: 개발자 유형 지표
-    private BigDecimal indicator1;
-    private BigDecimal indicator2;
-    private BigDecimal indicator3;
-    private BigDecimal indicator4;
-    private BigDecimal indicator5;
+    private int growth;
+    private int stability;
+    private int value;
+    private int popularity;
+    private int balance;
 
     // 요구사항 9: 내 코인을 보유한 유형 및 보유자 확인
     private List<MyBunnyByDevTypeData> holderTypes;
