@@ -30,7 +30,6 @@ import team.avgmax.rabbit.user.repository.custom.HoldBunnyRepositoryCustomImpl;
 import team.avgmax.rabbit.bunny.repository.custom.MatchRepositoryCustomImpl;
 import team.avgmax.rabbit.bunny.repository.custom.OrderRepositoryCustomImpl;
 
-
 @Service
 @RequiredArgsConstructor
 public class PersonalUserService {

@@ -21,6 +21,7 @@ import team.avgmax.rabbit.bunny.entity.enums.ChartInterval;
 import team.avgmax.rabbit.bunny.service.BunnyService;
 import team.avgmax.rabbit.bunny.dto.response.OrderResponse;
 import team.avgmax.rabbit.user.entity.PersonalUser;
+import team.avgmax.rabbit.user.entity.enums.Role;
 
 import java.net.URI;
 import java.util.List;
@@ -80,17 +81,25 @@ public class BunnyController {
     @PostMapping("/{bunnyName}/like")
     public ResponseEntity<Void> addBunnyLike(@AuthenticationPrincipal Jwt jwt, @PathVariable String bunnyName) {
         String userId = jwt.getSubject();
-        log.info("POST 버니 좋아요 추가: {}", bunnyName);
-        bunnyService.addBunnyLike(bunnyName, userId);
+        
+        @SuppressWarnings("unchecked")
+        Role userRole = Role.valueOf(((List<String>) jwt.getClaim("roles")).get(0));
+        
+        log.info("POST 버니 좋아요 추가: {}, role={}", bunnyName, userRole);
+        bunnyService.addBunnyLike(bunnyName, userId, userRole);
         return ResponseEntity.ok().build();
     }
 
-    // 버니 좋아요 취소
+    // 버니 좋아요 취소  
     @DeleteMapping("/{bunnyName}/like")
     public ResponseEntity<Void> cancelBunnyLike(@AuthenticationPrincipal Jwt jwt, @PathVariable String bunnyName) {
         String userId = jwt.getSubject();
-        log.info("DELETE 버니 좋아요 취소: {}", bunnyName);
-        bunnyService.cancelBunnyLike(bunnyName, userId);
+        
+        @SuppressWarnings("unchecked")
+        Role userRole = Role.valueOf(((List<String>) jwt.getClaim("roles")).get(0));
+        
+        log.info("DELETE 버니 좋아요 취소: {}, role={}", bunnyName, userRole);
+        bunnyService.cancelBunnyLike(bunnyName, userId, userRole);
         return ResponseEntity.noContent().build();
     }
 

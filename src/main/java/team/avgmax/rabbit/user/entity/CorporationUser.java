@@ -17,7 +17,7 @@ public class CorporationUser extends User {
     @Builder.Default
     private String id = UlidGenerator.generateMonotonic();
 
-    private String name;
+    private String corporationName;
 
     private String bin;
 

@@ -189,18 +189,23 @@ public interface FundingApiDocs {
                         "my_account_c": 233000000,
                         "spec": {
                             "name": "정재웅",
-                            "birthdate": "1999-08-20",
+                            "email": "jungjaewoong@example.com",
+                            "phone": "010-1234-5678",
                             "image": "https://picsum.photos/200",
                             "resume": "https://resumeurl",
                             "position": "BACKEND",
-                            "sns": [
+                            "link": [
                                 {
-                                    "url": "https://url1.com",
-                                    "image": "https://picsum.photos/200"
+                                    "sns_id": "01HZXSNS00000000000000001",
+                                    "url": "https://github.com/example",
+                                    "type": "GITHUB",
+                                    "favicon": "https://github.com/favicon.ico"
                                 },
                                 {
-                                    "url": "https://url2.com",
-                                    "image": "https://picsum.photos/200"
+                                    "sns_id": "01HZXSNS00000000000000002",
+                                    "url": "https://linkedin.com/in/example",
+                                    "type": "LINKEDIN",
+                                    "favicon": "https://linkedin.com/favicon.ico"
                                 }
                             ],
                             "skill": [
@@ -209,12 +214,14 @@ public interface FundingApiDocs {
                             ],
                             "certification": [
                                 {
+                                    "certification_id": "01HZXCERT0000000000000001",
                                     "certificate_url": "https://certificationurl1",
                                     "name": "정보처리기사",
                                     "ca": "에이비지맥스",
                                     "cdate": "2015-09-01"
                                 },
                                 {
+                                    "certification_id": "01HZXCERT0000000000000002",
                                     "certificate_url": "https://certificationurl2",
                                     "name": "SQLD",
                                     "ca": "에이비지맥스",
@@ -223,6 +230,7 @@ public interface FundingApiDocs {
                             ],
                             "career": [
                                 {
+                                    "career_id": "01HZXCAREER00000000000001",
                                     "company_name": "에이비지맥스",
                                     "status": "EMPLOYED",
                                     "position": "백엔드 개발자",
@@ -231,6 +239,7 @@ public interface FundingApiDocs {
                                     "certificate_url": "https://companycerturl.com/career1"
                                 },
                                 {
+                                    "career_id": "01HZXCAREER00000000000002",
                                     "company_name": "테크스타트업",
                                     "status": "UNEMPLOYED",
                                     "position": "주니어 개발자",
@@ -241,24 +250,25 @@ public interface FundingApiDocs {
                             ],
                             "education": [
                                 {
+                                    "education_id": "01HZXEDU00000000000000001",
                                     "school_name": "서울대학교",
                                     "status": "ENROLLED",
                                     "major": "컴퓨터공학과",
                                     "start_date": "2015-03-01",
                                     "end_date": "2019-02-28",
-                                    "certificate_url": "https://eduurl.com/snu",
-                                    "priority": 1
+                                    "certificate_url": "https://eduurl.com/snu"
                                 },
                                 {
+                                    "education_id": "01HZXEDU00000000000000002",
                                     "school_name": "서울고등학교",
                                     "status": "GRADUATED",
                                     "major": "자연계열",
                                     "start_date": "2012-03-01",
                                     "end_date": "2015-02-28",
-                                    "certificate_url": "https://eduurl.com/seoulhs",
-                                    "priority": 2
+                                    "certificate_url": "https://eduurl.com/seoulhs"
                                 }
-                            ]
+                            ],
+                            "ai_review": "이 개발자는 백엔드 개발 경험이 풍부하고 Java, SpringBoot 기술 스택에 능숙합니다. 정보처리기사와 SQLD 자격증을 보유하고 있어 데이터베이스 관련 업무에도 전문성을 가지고 있습니다."
                         }
                     }
                     """

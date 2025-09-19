@@ -35,9 +35,12 @@ import team.avgmax.rabbit.bunny.repository.*;
 import team.avgmax.rabbit.bunny.service.webSocket.OrderBookAssembler;
 import team.avgmax.rabbit.global.policy.FeePolicy;
 import team.avgmax.rabbit.user.dto.response.SpecResponse;
+import team.avgmax.rabbit.user.entity.CorporationUser;
 import team.avgmax.rabbit.user.entity.HoldBunny;
+import team.avgmax.rabbit.user.repository.CorporationUserRepository;
 import team.avgmax.rabbit.user.repository.PersonalUserRepository;
 import team.avgmax.rabbit.user.entity.PersonalUser;
+import team.avgmax.rabbit.user.entity.enums.Role;
 import team.avgmax.rabbit.user.exception.UserError;
 import team.avgmax.rabbit.user.exception.UserException;
 import team.avgmax.rabbit.user.repository.HoldBunnyRepository;
@@ -64,9 +67,9 @@ public class BunnyService {
     private final PersonalUserRepository personalUserRepository;
     private final OrderRepository orderRepository;
     private final MatchRepository matchRepository;
+    private final CorporationUserRepository corporationUserRepository;
     private final OrderBookAssembler orderBookAssembler;
     private final OrderBookPublisher orderBookPublisher;
-
 
     // 버니 목록 조회
     @Transactional(readOnly = true) // 읽기 전용
@@ -81,16 +84,8 @@ public class BunnyService {
             log.debug("No bunnies found for filter={}", filter);
         }
 
-        List<String> bunnyIds = bunnies.stream().map(Bunny::getId).toList();
-
-        Map<String, List<Badge>> badgesByBunnyId = badgeRepository.findAllByBunnyIdIn(bunnyIds).stream()
-                .collect(Collectors.groupingBy(Badge::getBunnyId));
-
         return bunnies.stream()
-                .map(bunny -> {
-                    List<Badge> badges = badgesByBunnyId.getOrDefault(bunny.getId(), Collections.emptyList());
-                    return FetchBunnyResponse.from(bunny,badges);
-                })
+                .map(bunny -> FetchBunnyResponse.from(bunny))
                 .toList();
     }
 
@@ -100,11 +95,9 @@ public class BunnyService {
         Bunny bunny = bunnyRepository.findByBunnyName(bunnyName)
                 .orElseThrow(() -> new BunnyException(BunnyError.BUNNY_NOT_FOUND));
 
-        List<Badge> badges = badgeRepository.findAllByBunnyId(bunny.getId());
-
         log.debug("Found bunny id={} name={}", bunny.getId(), bunny.getBunnyName());
 
-        return FetchBunnyResponse.from(bunny, badges);
+        return FetchBunnyResponse.from(bunny);
     }
 
     // 마이 버니 조회
@@ -119,11 +112,10 @@ public class BunnyService {
         List<ComparisonData> competitors = getCompetitors(myBunny);
         List<MyBunnyByDevTypeData> holderTypes = getHolderTypes(myBunny);
         List<MyBunnyByHolderData> holders = getHolders(myBunny.getId());
-        List<Badge> badges = badgeRepository.findAllByBunnyId(myBunny.getId());
         SpecResponse spec = SpecResponse.from(personalUser);
         BigDecimal myGrowthRate = calculateGrowthRate(myBunny);
         BigDecimal avgBunnyTypeGrowthRate = bunnyRepository.findAverageGrowthRateByBunnyType(myBunny.getBunnyType());
-        BigDecimal avgPositionGrowthRate = bunnyRepository.findAverageGrowthRateByPosition(myBunny.getPosition());
+        BigDecimal avgPositionGrowthRate = bunnyRepository.findAverageGrowthRateByPosition(myBunny.getUser().getPosition());
         BigDecimal avgDevTypeGrowthRate = bunnyRepository.findAverageGrowthRateByDeveloperType(myBunny.getDeveloperType());
         List<DailyPriceData> monthlyGrowRate = getMonthlyGrowthRate(myBunny.getId());
 
@@ -135,8 +127,8 @@ public class BunnyService {
                 .bunnyName(myBunny.getBunnyName())
                 .bunnyType(myBunny.getBunnyType())
                 .developerType(myBunny.getDeveloperType())
-                .position(myBunny.getPosition())
-                .badges(badges)
+                .position(myBunny.getUser().getPosition())
+                .badges(myBunny.getBadges().stream().map(Badge::getBadgeImg).toList())
                 .todayTime(LocalDate.now())
                 .monthlyGrowthRates(monthlyGrowRate)
                 .priceHistory(priceHistory)
@@ -149,11 +141,11 @@ public class BunnyService {
                 .avgPositionVsMe(myGrowthRate.subtract(avgPositionGrowthRate))
                 .avgDevTypeVsMe(myGrowthRate.subtract(avgDevTypeGrowthRate))
                 .competitors(competitors)
-//                .indicator1()
-//                .indicator2()
-//                .indicator3()
-//                .indicator4()
-//                .indicator5()
+                .growth(myBunny.getGrowth())
+                .stability(myBunny.getStability())
+                .value(myBunny.getValue())
+                .popularity(myBunny.getPopularity())
+                .balance(myBunny.getBalance())
                 .holderTypes(holderTypes)
                 .holders(holders)
 //                .propensityMatchRate()
@@ -194,17 +186,26 @@ public class BunnyService {
 
     // 좋아요 추가
     @Transactional
-    public void addBunnyLike(String bunnyName, String userId) {
+    public void addBunnyLike(String bunnyName, String userId, Role role) {
         Bunny bunny = findBunnyByName(bunnyName);
         bunnyLikeRepository.save(BunnyLike.create(bunny.getId(), userId));
+        if (role == Role.ROLE_CORPORATION) {
+            CorporationUser corporationUser = corporationUserRepository.findById(userId)
+                .orElseThrow(() -> new UserException(UserError.USER_NOT_FOUND));
+            badgeRepository.save(Badge.create(bunny.getId(), userId, corporationUser.getCorporationName()));
+        }
         bunny.addLikeCount();
     }
 
     // 좋아요 취소
     @Transactional
-    public void cancelBunnyLike(String bunnyName, String userId) {
+    public void cancelBunnyLike(String bunnyName, String userId, Role role) {
         Bunny bunny = findBunnyByName(bunnyName);
         bunnyLikeRepository.deleteByBunnyIdAndUserId(bunny.getId(), userId);
+        if (role == Role.ROLE_CORPORATION) {
+            badgeRepository.deleteByBunnyIdAndUserId(bunny.getId(), userId);
+            return;
+        }
         bunny.subtractLikeCount();
     }
 
