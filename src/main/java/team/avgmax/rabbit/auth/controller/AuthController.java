@@ -14,6 +14,7 @@ import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Map;
@@ -74,7 +75,7 @@ public class AuthController implements AuthApiDocs {
                     .build();
 
             response.setHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
-
+            
             return ResponseEntity.ok(Map.of("message", "new access token issued"));
 
         } catch (JwtException e) {
@@ -91,7 +92,7 @@ public class AuthController implements AuthApiDocs {
     }
 
     @GetMapping("/logout")
-    public ResponseEntity<Void> logout(HttpServletResponse response) {
+    public void logout(HttpServletResponse response) throws IOException {
         // ACCESS_TOKEN 만료
         ResponseCookie accessCookie = ResponseCookie.from("ACCESS_TOKEN", "")
                 .httpOnly(true)
@@ -113,7 +114,7 @@ public class AuthController implements AuthApiDocs {
         response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
-        return ResponseEntity.noContent().build(); // 204 No Content
+        response.sendRedirect("/");
     }
 
     @GetMapping("/dummy")
