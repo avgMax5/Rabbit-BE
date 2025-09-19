@@ -94,9 +94,6 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
-        response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write("{\"message\": \"login success\"}");
-
         response.sendRedirect(redirectUri);
     }
 }

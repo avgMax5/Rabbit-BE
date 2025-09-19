@@ -12,6 +12,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import java.io.IOException;
 import java.util.Map;
 
 @Tag(name = "Auth", description = "인증 API")
@@ -86,7 +87,7 @@ public interface AuthApiDocs {
             description = "로그아웃 성공"
         )
     })
-    ResponseEntity<Void> logout(HttpServletResponse response);
+    void logout(HttpServletResponse response) throws IOException;
 
     @Operation(
         summary = "더미 토큰 발급",
