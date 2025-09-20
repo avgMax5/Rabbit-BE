@@ -1,7 +1,7 @@
 package team.avgmax.rabbit.bunny.entity.enums;
 
 public enum DeveloperType {
-    UNDEFINED, // 미발행자는 개발자 유형이 없으므로
+    BASIC, // 기본형
     GROWTH,
     STABLE,
     VALUE,

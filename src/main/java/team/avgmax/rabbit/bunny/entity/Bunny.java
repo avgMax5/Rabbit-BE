@@ -73,7 +73,7 @@ public class Bunny extends BaseTime {
         return Bunny.builder()
                 .user(fundBunny.getUser())
                 .bunnyName(fundBunny.getBunnyName())
-                .developerType(DeveloperType.UNDEFINED)
+                .developerType(DeveloperType.BASIC)
                 .bunnyType(fundBunny.getType())
                 .reliability(BigDecimal.ZERO) // 추후 계산 로직 추가
                 .currentPrice(fundBunny.getType().getPrice())
