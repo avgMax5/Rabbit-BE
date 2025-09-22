@@ -15,6 +15,7 @@ import team.avgmax.rabbit.user.dto.request.UpdatePersonalUserRequest;
 import team.avgmax.rabbit.user.dto.response.CarrotsResponse;
 import team.avgmax.rabbit.user.dto.response.FetchUserResponse;
 import team.avgmax.rabbit.user.dto.response.HoldBunniesResponse;
+import team.avgmax.rabbit.user.dto.response.HoldBunniesStatsResponse;
 import team.avgmax.rabbit.user.dto.response.PersonalUserResponse;
 import team.avgmax.rabbit.bunny.dto.response.OrderListResponse;
 
@@ -334,6 +335,62 @@ public interface PersonalUserApiDocs {
         )
     })
     ResponseEntity<HoldBunniesResponse> getMyHoldBunnies(
+        @Parameter(description = "JWT 토큰", hidden = true) Jwt jwt
+    );
+
+    @Operation(
+        summary = "보유 버니 통계 조회",
+        description = "현재 로그인한 사용자가 보유한 버니 통계 정보를 조회합니다."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "보유 버니 통계 조회 성공",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = HoldBunniesStatsResponse.class),
+                examples = @ExampleObject(
+                    value = """
+                    {
+                        "timestamp": "2025-09-20T23:45:15.50253",
+                        "total_market_cap": 1071613000,
+                        "position": {
+                            "frontend": 50.93,
+                            "backend": 49.07,
+                            "fullstack": 0,
+                            "top": {
+                                "type": "frontend",
+                                "total_market_cap": 545813000
+                            }
+                        },
+                        "developer_type": {
+                            "basic": 0,
+                            "growth": 14.98,
+                            "stable": 0,
+                            "value": 0,
+                            "popular": 48.1,
+                            "balance": 36.93,
+                            "top": {
+                                "type": "popular",
+                                "total_market_cap": 515400000
+                            }
+                        },
+                        "coin_type": {
+                            "a": 13.84,
+                            "b": 43.89,
+                            "c": 42.27,
+                            "top": {
+                                "type": "b",
+                                "total_market_cap": 470300000
+                            }
+                        }
+                    }
+                    """
+                )
+            )
+        )
+    })
+    ResponseEntity<HoldBunniesStatsResponse> getMyHoldBunniesStats(
         @Parameter(description = "JWT 토큰", hidden = true) Jwt jwt
     );
 
