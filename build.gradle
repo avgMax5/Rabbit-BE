@@ -69,6 +69,9 @@ dependencies {
 	implementation 'org.springframework.ai:spring-ai-starter-model-openai'
 	implementation 'org.springframework.ai:spring-ai-advisors-vector-store'
 
+	// minio
+	implementation 'com.amazonaws:aws-java-sdk-s3:1.12.780'
+
 	// Spring-WebSocket
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 }

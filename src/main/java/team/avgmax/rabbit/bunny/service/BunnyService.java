@@ -6,10 +6,16 @@ import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import team.avgmax.rabbit.bunny.controller.webSocket.OrderBookPublisher;
 import team.avgmax.rabbit.bunny.dto.data.ComparisonData;
 import team.avgmax.rabbit.bunny.dto.data.DailyPriceData;
 import team.avgmax.rabbit.bunny.dto.data.MyBunnyByDevTypeData;
 import team.avgmax.rabbit.bunny.dto.data.MyBunnyByHolderData;
+import team.avgmax.rabbit.bunny.dto.orderBook.OrderBookDiff;
+import team.avgmax.rabbit.bunny.dto.orderBook.OrderBookLevel;
+import team.avgmax.rabbit.bunny.dto.orderBook.OrderBookSnapshot;
 import team.avgmax.rabbit.bunny.dto.request.OrderRequest;
 import team.avgmax.rabbit.bunny.dto.response.ChartDataPoint;
 import team.avgmax.rabbit.bunny.dto.response.ChartResponse;
@@ -26,11 +32,15 @@ import team.avgmax.rabbit.bunny.entity.enums.DeveloperType;
 import team.avgmax.rabbit.bunny.exception.BunnyError;
 import team.avgmax.rabbit.bunny.exception.BunnyException;
 import team.avgmax.rabbit.bunny.repository.*;
+import team.avgmax.rabbit.bunny.service.webSocket.OrderBookAssembler;
 import team.avgmax.rabbit.global.policy.FeePolicy;
 import team.avgmax.rabbit.user.dto.response.SpecResponse;
+import team.avgmax.rabbit.user.entity.CorporationUser;
 import team.avgmax.rabbit.user.entity.HoldBunny;
+import team.avgmax.rabbit.user.repository.CorporationUserRepository;
 import team.avgmax.rabbit.user.repository.PersonalUserRepository;
 import team.avgmax.rabbit.user.entity.PersonalUser;
+import team.avgmax.rabbit.user.entity.enums.Role;
 import team.avgmax.rabbit.user.exception.UserError;
 import team.avgmax.rabbit.user.exception.UserException;
 import team.avgmax.rabbit.user.repository.HoldBunnyRepository;
@@ -41,6 +51,8 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static team.avgmax.rabbit.bunny.service.webSocket.OrderBookAssembler.normalizePrice;
 
 @Slf4j
 @Service
@@ -55,7 +67,9 @@ public class BunnyService {
     private final PersonalUserRepository personalUserRepository;
     private final OrderRepository orderRepository;
     private final MatchRepository matchRepository;
-
+    private final CorporationUserRepository corporationUserRepository;
+    private final OrderBookAssembler orderBookAssembler;
+    private final OrderBookPublisher orderBookPublisher;
 
     // 버니 목록 조회
     @Transactional(readOnly = true) // 읽기 전용
@@ -70,16 +84,8 @@ public class BunnyService {
             log.debug("No bunnies found for filter={}", filter);
         }
 
-        List<String> bunnyIds = bunnies.stream().map(Bunny::getId).toList();
-
-        Map<String, List<Badge>> badgesByBunnyId = badgeRepository.findAllByBunnyIdIn(bunnyIds).stream()
-                .collect(Collectors.groupingBy(Badge::getBunnyId));
-
         return bunnies.stream()
-                .map(bunny -> {
-                    List<Badge> badges = badgesByBunnyId.getOrDefault(bunny.getId(), Collections.emptyList());
-                    return FetchBunnyResponse.from(bunny,badges);
-                })
+                .map(bunny -> FetchBunnyResponse.from(bunny))
                 .toList();
     }
 
@@ -89,11 +95,9 @@ public class BunnyService {
         Bunny bunny = bunnyRepository.findByBunnyName(bunnyName)
                 .orElseThrow(() -> new BunnyException(BunnyError.BUNNY_NOT_FOUND));
 
-        List<Badge> badges = badgeRepository.findAllByBunnyId(bunny.getId());
-
         log.debug("Found bunny id={} name={}", bunny.getId(), bunny.getBunnyName());
 
-        return FetchBunnyResponse.from(bunny, badges);
+        return FetchBunnyResponse.from(bunny);
     }
 
     // 마이 버니 조회
@@ -108,11 +112,10 @@ public class BunnyService {
         List<ComparisonData> competitors = getCompetitors(myBunny);
         List<MyBunnyByDevTypeData> holderTypes = getHolderTypes(myBunny);
         List<MyBunnyByHolderData> holders = getHolders(myBunny.getId());
-        List<Badge> badges = badgeRepository.findAllByBunnyId(myBunny.getId());
         SpecResponse spec = SpecResponse.from(personalUser);
         BigDecimal myGrowthRate = calculateGrowthRate(myBunny);
         BigDecimal avgBunnyTypeGrowthRate = bunnyRepository.findAverageGrowthRateByBunnyType(myBunny.getBunnyType());
-        BigDecimal avgPositionGrowthRate = bunnyRepository.findAverageGrowthRateByPosition(myBunny.getPosition());
+        BigDecimal avgPositionGrowthRate = bunnyRepository.findAverageGrowthRateByPosition(myBunny.getUser().getPosition());
         BigDecimal avgDevTypeGrowthRate = bunnyRepository.findAverageGrowthRateByDeveloperType(myBunny.getDeveloperType());
         List<DailyPriceData> monthlyGrowRate = getMonthlyGrowthRate(myBunny.getId());
 
@@ -124,8 +127,8 @@ public class BunnyService {
                 .bunnyName(myBunny.getBunnyName())
                 .bunnyType(myBunny.getBunnyType())
                 .developerType(myBunny.getDeveloperType())
-                .position(myBunny.getPosition())
-                .badges(badges)
+                .position(myBunny.getUser().getPosition())
+                .badges(myBunny.getBadges().stream().map(Badge::getBadgeImg).toList())
                 .todayTime(LocalDate.now())
                 .monthlyGrowthRates(monthlyGrowRate)
                 .priceHistory(priceHistory)
@@ -138,11 +141,11 @@ public class BunnyService {
                 .avgPositionVsMe(myGrowthRate.subtract(avgPositionGrowthRate))
                 .avgDevTypeVsMe(myGrowthRate.subtract(avgDevTypeGrowthRate))
                 .competitors(competitors)
-//                .indicator1()
-//                .indicator2()
-//                .indicator3()
-//                .indicator4()
-//                .indicator5()
+                .growth(myBunny.getGrowth())
+                .stability(myBunny.getStability())
+                .value(myBunny.getValue())
+                .popularity(myBunny.getPopularity())
+                .balance(myBunny.getBalance())
                 .holderTypes(holderTypes)
                 .holders(holders)
 //                .propensityMatchRate()
@@ -183,17 +186,26 @@ public class BunnyService {
 
     // 좋아요 추가
     @Transactional
-    public void addBunnyLike(String bunnyName, String userId) {
+    public void addBunnyLike(String bunnyName, String userId, Role role) {
         Bunny bunny = findBunnyByName(bunnyName);
         bunnyLikeRepository.save(BunnyLike.create(bunny.getId(), userId));
+        if (role == Role.ROLE_CORPORATION) {
+            CorporationUser corporationUser = corporationUserRepository.findById(userId)
+                .orElseThrow(() -> new UserException(UserError.USER_NOT_FOUND));
+            badgeRepository.save(Badge.create(bunny.getId(), userId, corporationUser.getCorporationName()));
+        }
         bunny.addLikeCount();
     }
 
     // 좋아요 취소
     @Transactional
-    public void cancelBunnyLike(String bunnyName, String userId) {
+    public void cancelBunnyLike(String bunnyName, String userId, Role role) {
         Bunny bunny = findBunnyByName(bunnyName);
         bunnyLikeRepository.deleteByBunnyIdAndUserId(bunny.getId(), userId);
+        if (role == Role.ROLE_CORPORATION) {
+            badgeRepository.deleteByBunnyIdAndUserId(bunny.getId(), userId);
+            return;
+        }
         bunny.subtractLikeCount();
     }
 
@@ -204,11 +216,11 @@ public class BunnyService {
 
     // 거래 주문 요청
     @Transactional
-    public OrderResponse createOrder(String bunnyName, OrderRequest request, PersonalUser principal) {
+    public OrderResponse createOrder(String bunnyName, OrderRequest request, String userId) {
         Bunny bunny = bunnyRepository.findByBunnyName(bunnyName)
                 .orElseThrow(() -> new BunnyException(BunnyError.BUNNY_NOT_FOUND));
 
-        PersonalUser user = personalUserRepository.findByIdForUpdate(principal.getId());
+        PersonalUser user = personalUserRepository.findByIdForUpdate(userId);
 
         if (request.orderType() == OrderType.SELL) {
             holdBunnyRepository.findByHolderAndBunnyForUpdate(user, bunny);
@@ -222,6 +234,15 @@ public class BunnyService {
 
         Order order = request.toEntity(user, bunny);
         orderRepository.save(order);
+
+        final Set<BigDecimal> touchedBidPrices = new HashSet<>();
+        final Set<BigDecimal> touchedAskPrices = new HashSet<>();
+
+        if (order.getOrderType() == OrderType.BUY) {
+            touchedBidPrices.add(order.getUnitPrice());
+        } else {
+            touchedAskPrices.add(order.getUnitPrice());
+        }
 
         List<Order> candidates = (order.getOrderType() == OrderType.BUY)
                 ? orderRepository.findSellCandidatesByPriceAsc(bunny.getId(), order.getUnitPrice(), user.getId())
@@ -241,6 +262,13 @@ public class BunnyService {
 
             BigDecimal tradePrice = counter.getUnitPrice();
             BigDecimal tradeAmount = tradable.multiply(tradePrice);
+
+            // 상대 가격대도 터치셋에 추가
+            if (counter.getOrderType() == OrderType.BUY) {
+                touchedBidPrices.add(counter.getUnitPrice());
+            } else {
+                touchedAskPrices.add(counter.getUnitPrice());
+            }
 
             Match match = Match.builder()
                     .bunny(bunny)
@@ -265,9 +293,12 @@ public class BunnyService {
             remainingQty = remainingQty.subtract(tradable);
         }
 
+        emitOrderBookDiff(bunny, touchedBidPrices, touchedAskPrices);
+
         return OrderResponse.from(order);
     }
 
+    // 거래 주문 취소
     @Transactional
     public void cancelOrder(String bunnyName, String orderId, PersonalUser principal) {
         Bunny bunny = bunnyRepository.findByBunnyName(bunnyName)
@@ -285,7 +316,41 @@ public class BunnyService {
             throw new BunnyException(BunnyError.ORDER_ALREADY_FILLED);
         }
 
+        // 취소 처리
         orderRepository.delete(order);
+
+        // 영향 받은 가격 레벨대 수집
+        Set<BigDecimal> bidTouched = new HashSet<>();
+        Set<BigDecimal> askTouched = new HashSet<>();
+        if (order.getOrderType() == OrderType.BUY) {
+            bidTouched.add(order.getUnitPrice());
+        } else {
+            askTouched.add(order.getUnitPrice());
+        }
+
+        // Diff 발행 (커밋 후 전송)
+        emitOrderBookDiff(bunny, bidTouched, askTouched);
+    }
+
+    // 특정 버니 호가창 스냅샷 조회
+    @Transactional(readOnly = true)
+    public OrderBookSnapshot getOrderBookSnapshot(String bunnyName) {
+        Bunny bunny = bunnyRepository.findByBunnyName(bunnyName)
+                .orElseThrow(() -> new BunnyException(BunnyError.BUNNY_NOT_FOUND));
+
+        List<Order> buyOrders  = orderRepository.findAllByBunnyAndSideForOrderBook(bunny.getId(), OrderType.BUY);
+        List<Order> sellOrders = orderRepository.findAllByBunnyAndSideForOrderBook(bunny.getId(), OrderType.SELL);
+
+        // Order → OrderLeaf 변환 (잔여 수량 계산 포함)
+        List<OrderBookAssembler.OrderLeaf> bidLeaves = toLeaves(buyOrders, bunny.getId());
+        List<OrderBookAssembler.OrderLeaf> askLeaves = toLeaves(sellOrders, bunny.getId());
+
+        List<OrderBookLevel> bids = orderBookAssembler.toLevel(bidLeaves);
+        List<OrderBookLevel> asks = orderBookAssembler.toLevel(askLeaves);
+
+        BigDecimal currentPrice = queryCurrentPrice(bunny);
+
+        return OrderBookSnapshot.from(bunny, bids, asks, currentPrice);
     }
 
     private List<DailyPriceData> getPriceHistory(String bunnyId) {
@@ -476,9 +541,11 @@ public class BunnyService {
         // 미체결 매수 주문들의 동결 금액(수수료 포함)
         BigDecimal reserved = sumOpenBuyReservedAmount(user.getId());
 
-        BigDecimal available = user.getCarrot().subtract(reserved);
+        user.subtractCarrot(reserved);
 
-        if (available.compareTo(orderCost) < 0) throw new BunnyException(BunnyError.INSUFFICIENT_BALANCE);
+//        BigDecimal available = user.getCarrot().subtract(reserved);
+//
+//        if (available.compareTo(orderCost) < 0) throw new BunnyException(BunnyError.INSUFFICIENT_BALANCE);
     }
 
     private void validateSell(Bunny bunny, OrderRequest request, PersonalUser user) {
@@ -514,7 +581,7 @@ public class BunnyService {
                 order.getCreatedAt()
         );
 
-        BigDecimal own = cum.subtract(prev);
+        BigDecimal own = (cum == null ? BigDecimal.ZERO : cum).subtract(prev == null ? BigDecimal.ZERO : prev);
         if (own.signum() < 0) own = BigDecimal.ZERO;
         if (own.compareTo(order.getQuantity()) > 0) own = order.getQuantity();
         return own;
@@ -557,4 +624,115 @@ public class BunnyService {
     private static BigDecimal min(BigDecimal a, BigDecimal b) {
         return a.compareTo(b) <= 0 ? a : b;
     }
+
+    private List<OrderBookAssembler.OrderLeaf> toLeaves(List<Order> orders, String bunnyId) {
+        List<OrderBookAssembler.OrderLeaf> out = new ArrayList<>(orders.size());
+        for (Order o : orders) {
+            BigDecimal rem = remainingOf(o, bunnyId);
+            if (rem.signum() > 0) {
+                out.add(new OrderBookAssembler.OrderLeaf(o.getUnitPrice(), rem));
+            }
+        }
+        return out;
+    }
+
+    private BigDecimal queryCurrentPrice(Bunny bunny) {
+        // 1) 최근 체결가 (동일 트랜잭션 내에서 방금 저장한 Match 도 조회)
+        BigDecimal lastTrade = matchRepository.findLastTradePriceByBunnyId(bunny.getId());
+        if (lastTrade != null) return lastTrade;
+
+        // 2) 저장된 현재가(있다면)
+        if (bunny.getCurrentPrice() != null) return bunny.getCurrentPrice();
+
+        // 3) 직전 종가(있다면)
+        if (bunny.getClosingPrice() != null) return bunny.getClosingPrice();
+
+        // 4) 정말 없으면 0
+        return BigDecimal.ZERO;
+    }
+
+    private void emitOrderBookDiff(Bunny bunny, Set<BigDecimal> bidPrices, Set<BigDecimal> askPrices) {
+        if ((bidPrices == null || bidPrices.isEmpty()) && (askPrices == null || askPrices.isEmpty())) {
+            return;
+        }
+
+        // 부분 집계들 (Upserts/Deletes)
+        // 잔여가 있으면 → upsert
+        List<OrderBookLevel> bidUpserts = aggregateLevelsForPrices(bunny.getId(), OrderType.BUY, bidPrices);
+        List<OrderBookLevel> askUpserts = aggregateLevelsForPrices(bunny.getId(), OrderType.SELL, askPrices);
+
+        // 잔여가 0이면 → delete
+        List<BigDecimal> bidDeletes = findDeletes(bidPrices, bidUpserts);
+        List<BigDecimal> askDeletes = findDeletes(askPrices, askUpserts);
+
+        BigDecimal currentPrice = queryCurrentPrice(bunny);
+
+        OrderBookDiff diff = new OrderBookDiff(
+                bunny.getBunnyName(),
+                bidUpserts,
+                bidDeletes,
+                askUpserts,
+                askDeletes,
+                currentPrice,
+                System.currentTimeMillis()
+        );
+
+        // 트랜잭션 커밋 이후에만 브로드캐스트
+        publishAfterCommit(bunny.getBunnyName(), diff);
+    }
+
+    private List<OrderBookLevel> aggregateLevelsForPrices(String bunnyId, OrderType side, Set<BigDecimal> prices) {
+        if (prices == null || prices.isEmpty()) return List.of();
+
+        Set<BigDecimal> normPrices = prices.stream()
+                .filter(Objects::nonNull)
+                .map(OrderBookAssembler::normalizePrice)
+                .collect(Collectors.toSet());
+
+        // 가격별 잔여량 합산
+        Map<BigDecimal, BigDecimal> sumByPrice = orderRepository
+                .findAllByBunnySideAndPriceIn(bunnyId, side, prices).stream()
+                .map(o -> new AbstractMap.SimpleEntry<>(normalizePrice(o.getUnitPrice()), remainingOf(o, bunnyId)))
+                .filter(e -> e.getValue() != null && e.getValue().signum() > 0)
+                .collect(Collectors.groupingBy(
+                        Map.Entry::getKey,
+                        Collectors.mapping(Map.Entry::getValue,
+                                Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))
+                ));
+
+        // Map → OrderBookLevel 변환
+        return sumByPrice.entrySet().stream()
+                .map(e -> new OrderBookLevel(e.getKey(), e.getValue()))
+                .sorted(Comparator.comparing(OrderBookLevel::price).reversed())
+                .toList();
+    }
+
+    private List<BigDecimal> findDeletes(Set<BigDecimal> touchedPrices, List<OrderBookLevel> upserts) {
+        if (touchedPrices == null || touchedPrices.isEmpty()) return List.of();
+
+        Set<BigDecimal> upsertPrices = upserts.stream()
+                .map(lv -> normalizePrice(lv.price()))
+                .collect(Collectors.toSet());
+
+        return touchedPrices.stream()
+                .map(OrderBookAssembler::normalizePrice)
+                .filter(p -> !upsertPrices.contains(p))
+                .toList();
+    }
+
+    // 트랜잭션 커밋 후에만 diff 를 publish 한다.
+    // 트랜잭션이 없으면(비동기/스케줄러 등) 즉시 publish 로 폴백.
+    private void publishAfterCommit(String bunnyName, OrderBookDiff diff) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override public void afterCommit() {
+                    orderBookPublisher.publishDiff(bunnyName, diff);
+                }
+            });
+        } else {
+            // 트랜잭션 바깥이면 그냥 즉시 전송
+            orderBookPublisher.publishDiff(bunnyName, diff);
+        }
+    }
+
 }

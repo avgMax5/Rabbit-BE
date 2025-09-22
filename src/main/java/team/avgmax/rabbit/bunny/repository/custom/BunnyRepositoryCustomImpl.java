@@ -47,7 +47,7 @@ public class BunnyRepositoryCustomImpl implements BunnyRepositoryCustom{
 
     @Override
     public BigDecimal findAverageGrowthRateByPosition(Position position) {
-        return calculateAverageGrowthRate(bunny.position.eq(position));
+        return calculateAverageGrowthRate(bunny.user.position.eq(position));
     }
 
     @Override

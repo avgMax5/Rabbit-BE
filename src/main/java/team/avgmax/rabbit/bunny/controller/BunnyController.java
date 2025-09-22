@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import team.avgmax.rabbit.auth.oauth2.CustomOAuth2User;
+import team.avgmax.rabbit.bunny.dto.orderBook.OrderBookSnapshot;
 import team.avgmax.rabbit.bunny.dto.request.OrderRequest;
 import team.avgmax.rabbit.bunny.dto.response.ChartResponse;
 import team.avgmax.rabbit.bunny.dto.response.FetchBunnyResponse;
@@ -20,6 +21,7 @@ import team.avgmax.rabbit.bunny.entity.enums.ChartInterval;
 import team.avgmax.rabbit.bunny.service.BunnyService;
 import team.avgmax.rabbit.bunny.dto.response.OrderResponse;
 import team.avgmax.rabbit.user.entity.PersonalUser;
+import team.avgmax.rabbit.user.entity.enums.Role;
 
 import java.net.URI;
 import java.util.List;
@@ -79,17 +81,25 @@ public class BunnyController {
     @PostMapping("/{bunnyName}/like")
     public ResponseEntity<Void> addBunnyLike(@AuthenticationPrincipal Jwt jwt, @PathVariable String bunnyName) {
         String userId = jwt.getSubject();
-        log.info("POST 버니 좋아요 추가: {}", bunnyName);
-        bunnyService.addBunnyLike(bunnyName, userId);
+        
+        @SuppressWarnings("unchecked")
+        Role userRole = Role.valueOf(((List<String>) jwt.getClaim("roles")).get(0));
+        
+        log.info("POST 버니 좋아요 추가: {}, role={}", bunnyName, userRole);
+        bunnyService.addBunnyLike(bunnyName, userId, userRole);
         return ResponseEntity.ok().build();
     }
 
-    // 버니 좋아요 취소
+    // 버니 좋아요 취소  
     @DeleteMapping("/{bunnyName}/like")
     public ResponseEntity<Void> cancelBunnyLike(@AuthenticationPrincipal Jwt jwt, @PathVariable String bunnyName) {
         String userId = jwt.getSubject();
-        log.info("DELETE 버니 좋아요 취소: {}", bunnyName);
-        bunnyService.cancelBunnyLike(bunnyName, userId);
+        
+        @SuppressWarnings("unchecked")
+        Role userRole = Role.valueOf(((List<String>) jwt.getClaim("roles")).get(0));
+        
+        log.info("DELETE 버니 좋아요 취소: {}, role={}", bunnyName, userRole);
+        bunnyService.cancelBunnyLike(bunnyName, userId, userRole);
         return ResponseEntity.noContent().build();
     }
 
@@ -98,12 +108,13 @@ public class BunnyController {
     public ResponseEntity<OrderResponse> createOrder(
             @PathVariable String bunnyName,
             @Valid @RequestBody OrderRequest request,
-            @AuthenticationPrincipal CustomOAuth2User user
+            @AuthenticationPrincipal Jwt jwt
     ) {
-        log.info("POST 거래 주문 요청: user={}, bunny={}", user.getName(), bunnyName);
+        String userId = jwt.getSubject();
+        log.info("POST 거래 주문 요청: user={}, bunny={}", userId, bunnyName);
 
-        PersonalUser personalUser = user.getPersonalUser();
-        OrderResponse response = bunnyService.createOrder(bunnyName, request, personalUser);
+
+        OrderResponse response = bunnyService.createOrder(bunnyName, request, userId);
         // 차후에 절대경로를 추가해주면 좀 더 RESTful 해진다.
         URI location = URI.create("/bunnies/" + bunnyName + "/orders/" + response.orderId());
 
@@ -123,5 +134,13 @@ public class BunnyController {
         bunnyService.cancelOrder(bunnyName, orderId, principal);
 
         return ResponseEntity.noContent().build();
+    }
+
+    // 특정 버니 호가창 스냅샷 조회
+    @GetMapping("/{bunnyName}/orderbook")
+    public ResponseEntity<OrderBookSnapshot> getOrderBookSnapshot(@PathVariable String bunnyName) {
+        log.info("GET 호가창 조회: {}", bunnyName);
+
+        return ResponseEntity.ok(bunnyService.getOrderBookSnapshot(bunnyName));
     }
 }

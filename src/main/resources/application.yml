@@ -29,6 +29,7 @@ spring:
           max-idle: 8
           min-idle: 0
           max-wait: -1ms
+
   ai:
     openai:
       api-key: ${OPENAI_API_KEY:dummy-test-key}
@@ -37,6 +38,12 @@ spring:
           model: gpt-4.1-nano
           temperature: 0.7         # 응답 다양성 (0.0 = 고정적, 1.0 = 창의적)
           max-tokens: 512          # 응답 길이 제한
+
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 25MB
+
   security:
     oauth2:
       client:
@@ -108,13 +115,17 @@ app:
       same-site: lax
     redirect-uri: ${FE_REDIRECT_URL}
     jwt:
-#      access-expiry: 900  # 15분 (60 * 15)
-      access-expiry: 86400  # 24시간 (60 * 60 * 24)
+      access-expiry: 86400  # 24시간 (60 * 60 * 24),  15분 (60 * 15)
       refresh-expiry: 86400  # 24시간 (60 * 60 * 24)
   redis:
     fund-bunny:
-      expiry: 259200000 # 3일 = 3 * 24 * 60 * 60 * 1000 밀리초
-  
+      expiry: 259200000 # 3일 (3 * 24 * 60 * 60 * 1000(밀리초))
+  minio:
+    server: ${S3_SERVER}
+    region: ${S3_REGION}
+    userId: ${S3_USERID}
+    userPw: ${S3_PASSWORD}
+    bucket: ${S3_BUCKET}
 
 server:
   port: 8080

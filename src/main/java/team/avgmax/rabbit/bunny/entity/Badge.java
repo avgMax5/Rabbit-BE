@@ -3,7 +3,6 @@ package team.avgmax.rabbit.bunny.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import team.avgmax.rabbit.bunny.entity.enums.BadgeImg;
 import team.avgmax.rabbit.bunny.entity.id.BadgeId;
 import team.avgmax.rabbit.global.entity.BaseTime;
 
@@ -23,6 +22,13 @@ public class Badge extends BaseTime {
     @Column(name = "user_id", length = 26, nullable = false)
     private String userId;
 
-    @Enumerated(EnumType.STRING)
-    private BadgeImg badgeImg;
+    private String badgeImg;
+
+    public static Badge create(String bunnyId, String userId, String corporationName) {
+        return Badge.builder()
+                .bunnyId(bunnyId)
+                .userId(userId)
+                .badgeImg(corporationName)
+                .build();
+    }
 }

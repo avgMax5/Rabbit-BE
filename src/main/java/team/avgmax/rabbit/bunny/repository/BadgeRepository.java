@@ -11,4 +11,6 @@ public interface BadgeRepository extends JpaRepository<Badge, BadgeId> {
     List<Badge> findAllByBunnyIdIn(List<String> bunnyIds);
 
     List<Badge> findAllByBunnyId(String bunnyId);
+
+    void deleteByBunnyIdAndUserId(String bunnyId, String userId);
 }

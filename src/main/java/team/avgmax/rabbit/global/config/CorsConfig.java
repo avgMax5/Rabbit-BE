@@ -1,4 +1,4 @@
-package team.avgmax.rabbit.auth.config;
+package team.avgmax.rabbit.global.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -19,7 +19,7 @@ public class CorsConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(allowedOrigins);
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
         configuration.setAllowedHeaders(List.of("*")); 
         configuration.setAllowCredentials(true); // 쿠키/Authorization 헤더 허용 (JWT 쿠키 전송하려면 필수)
 
