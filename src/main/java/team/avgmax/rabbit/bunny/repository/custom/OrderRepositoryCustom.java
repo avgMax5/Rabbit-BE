@@ -11,8 +11,6 @@ import java.util.Set;
 public interface OrderRepositoryCustom {
     OrderListResponse findOrdersByUserId(String personalUserId);
 
-    List<Order> findAllByUserAndBunnyAndSideOrderByCreatedAtAsc(String userId, String bunnyId, OrderType side);
-
     Order findByIdAndBunnyIdForUpdate(String orderId, String bunnyId);
 
     List<Order> findAllByBunnyAndSideForOrderBook(String bunnyId, OrderType side);

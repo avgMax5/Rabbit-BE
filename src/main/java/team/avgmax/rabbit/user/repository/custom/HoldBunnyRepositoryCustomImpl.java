@@ -1,9 +1,11 @@
 package team.avgmax.rabbit.user.repository.custom;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.dsl.NumberExpression;
 import org.springframework.stereotype.Repository;
 
 import com.querydsl.core.types.Projections;
@@ -32,7 +34,7 @@ public class HoldBunnyRepositoryCustomImpl implements HoldBunnyRepositoryCustom 
                         holdBunny.bunny.id,
                         holdBunny.bunny.bunnyName,
                         holdBunny.holdQuantity,
-                        holdBunny.totalBuyAmount
+                        holdBunny.costBasis
                         ))
                 .from(holdBunny)
                 .where(holdBunny.holder.id.eq(personalUserId))
@@ -83,24 +85,72 @@ public class HoldBunnyRepositoryCustomImpl implements HoldBunnyRepositoryCustom 
     }
 
     @Override
+    public void upsertForTrade(String userId, String bunnyId, BigDecimal qtyDelta, BigDecimal tradeBaseAmount, boolean adjustCost) {
+
+        QHoldBunny hold = QHoldBunny.holdBunny;
+        NumberExpression<BigDecimal> newQtyExpr = hold.holdQuantity.add(qtyDelta);
+
+        // costBasis 계산 로직
+        NumberExpression<BigDecimal> newCostExpr =
+                com.querydsl.core.types.dsl.Expressions.cases()
+                        // 예약이면 원가 유지
+                        .when(com.querydsl.core.types.dsl.Expressions.booleanTemplate("{0} = false", adjustCost))
+                        .then(hold.costBasis)
+                        // 매수 체결이면 원가 += 체결 원금
+                        .when(com.querydsl.core.types.dsl.Expressions.booleanTemplate("{0} > 0", qtyDelta))
+                        .then(hold.costBasis.add(tradeBaseAmount))
+                        // 매도 체결이면 원가 비율 축소
+                        .when(com.querydsl.core.types.dsl.Expressions.booleanTemplate("{0} < 0 AND {1} > 0", qtyDelta, hold.holdQuantity))
+                        .then(
+                                hold.costBasis
+                                        .multiply(newQtyExpr)
+                                        .divide(hold.holdQuantity) // 정수 원단위로 관리, 필요시 반올림 조정
+                        )
+                        .otherwise(hold.costBasis);
+
+        long updated = queryFactory.update(hold)
+                .set(hold.holdQuantity, newQtyExpr)
+                .set(hold.costBasis, newCostExpr)
+                .where(hold.holder.id.eq(userId), hold.bunny.id.eq(bunnyId))
+                .execute();
+
+        // 기존 보유가 없는데 매수 체결이라면 새 insert
+        if (updated == 0 && qtyDelta.signum() > 0 && adjustCost) {
+            String id = UlidGenerator.generateMonotonic();
+            queryFactory.insert(hold)
+                    .columns(hold.id, hold.holder.id, hold.bunny.id, hold.holdQuantity, hold.costBasis, hold.createdAt, hold.updatedAt)
+                    .values(id, userId, bunnyId, qtyDelta, tradeBaseAmount, LocalDateTime.now(), LocalDateTime.now())
+                    .execute();
+            return;
+        }
+
+        // 삭제는 체결(adjustCost=true)일 때만 허용
+        if (adjustCost) {
+            queryFactory.delete(hold)
+                    .where(
+                            hold.holder.id.eq(userId),
+                            hold.bunny.id.eq(bunnyId),
+                            hold.holdQuantity.loe(BigDecimal.ZERO)
+                    )
+                    .execute();
+        }
+    }
+
+    @Override
     public void addHoldForUpdate(String userId, String bunnyId, BigDecimal deltaQty) {
         QHoldBunny hold = QHoldBunny.holdBunny;
 
         long updated = queryFactory.update(hold)
                 .set(hold.holdQuantity, hold.holdQuantity.add(deltaQty))
-                .where(
-                        hold.holder.id.eq(userId),
-                        hold.bunny.id.eq(bunnyId)
-                )
+                .where(hold.holder.id.eq(userId), hold.bunny.id.eq(bunnyId))
                 .execute();
 
         if (updated == 0 && deltaQty.signum() > 0) {
-            String holdBunnyId = UlidGenerator.generateMonotonic();
+            String id = UlidGenerator.generateMonotonic();
             queryFactory.insert(hold)
-                    .columns(hold.id, hold.holder.id, hold.bunny.id, hold.holdQuantity, hold.totalBuyAmount)
-                    .values(holdBunnyId, userId, bunnyId, deltaQty, BigDecimal.ZERO) // totalBuyAmount는 상황에 맞게
+                    .columns(hold.id, hold.holder.id, hold.bunny.id, hold.holdQuantity, hold.costBasis, hold.createdAt, hold.updatedAt)
+                    .values(id, userId, bunnyId, deltaQty, BigDecimal.ZERO, LocalDateTime.now(), LocalDateTime.now())
                     .execute();
         }
     }
-
 }
