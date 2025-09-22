@@ -66,9 +66,13 @@ public class Bunny extends BaseTime {
     @Builder.Default
     private int balance = 10;
     
-    private String aiReview;
+    @Builder.Default
+    private String aiReview = "";
 
-    private String aiFeedback;
+    @Lob
+    @Builder.Default
+    @Basic(fetch = FetchType.LAZY)
+    private String aiFeedback = "";
 
     private long likeCount;
 
@@ -86,8 +90,6 @@ public class Bunny extends BaseTime {
                 .currentPrice(fundBunny.getType().getPrice())
                 .closingPrice(fundBunny.getType().getPrice())
                 .marketCap(fundBunny.getType().getMarketCap())
-                .aiReview("") // 추후 AI API 로직 추가
-                .aiFeedback("") // 추후 AI API 로직 추가
                 .build();
     }
 
@@ -156,5 +158,10 @@ public class Bunny extends BaseTime {
         } else {
             this.developerType = DeveloperType.BASIC; // 기본값
         }
+    }
+    
+    public void updateAiReviewAndFeedback(String aiReview, String aiFeedback) {
+        this.aiReview = aiReview;
+        this.aiFeedback = aiFeedback;
     }
 }

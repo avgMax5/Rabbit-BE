@@ -46,6 +46,9 @@ public class FetchBunnyResponse {
     // 배지
     private List<String> badges;
 
+    // AI Review
+    private String aiReview;
+
     // 좋아요 수
     private long likeCount;
 
@@ -70,6 +73,7 @@ public class FetchBunnyResponse {
                 .popularity(bunny.getPopularity())
                 .balance(bunny.getBalance())
                 .badges(bunny.getBadges().stream().map(Badge::getBadgeImg).toList())
+                .aiReview(bunny.getAiReview())
                 .likeCount(bunny.getLikeCount())
                 .createdAt(bunny.getCreatedAt())
                 .build();
