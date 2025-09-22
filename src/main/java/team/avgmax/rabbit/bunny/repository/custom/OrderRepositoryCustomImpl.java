@@ -1,7 +1,6 @@
 package team.avgmax.rabbit.bunny.repository.custom;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -44,50 +43,6 @@ public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
         return OrderListResponse.builder()
                 .orders(orders)
                 .build();
-    }
-
-    @Override
-    public List<Order> findSellCandidatesByPriceAsc(String bunnyId, BigDecimal buyPrice, String excludeUserId) {
-        QOrder order = QOrder.order;
-
-        return queryFactory
-                .selectFrom(order)
-                .where(
-                        order.bunny.id.eq(bunnyId),
-                        order.orderType.eq(OrderType.SELL),
-                        order.unitPrice.loe(buyPrice),
-                        order.user.id.ne(excludeUserId)
-                )
-                .orderBy(order.unitPrice.asc(), order.createdAt.asc())
-                .fetch();
-    }
-
-    @Override
-    public List<Order> findBuyCandidatesByPriceDesc(String bunnyId, BigDecimal sellPrice, String excludeUserId) {
-        QOrder order = QOrder.order;
-
-        return queryFactory
-                .selectFrom(order)
-                .where(
-                        order.bunny.id.eq(bunnyId),
-                        order.orderType.eq(OrderType.BUY),
-                        order.unitPrice.goe(sellPrice),
-                        order.user.id.ne(excludeUserId)
-                )
-                .orderBy(order.unitPrice.desc(), order.createdAt.asc())
-                .fetch();
-    }
-
-    @Override
-    public List<Order> findAllByUserAndSideOrderByCreatedAtAsc(String userId, OrderType side) {
-        QOrder order = QOrder.order;
-        return queryFactory.selectFrom(order)
-                .where(
-                        order.user.id.eq(userId),
-                        order.orderType.eq(side)
-                )
-                .orderBy(order.createdAt.asc())
-                .fetch();
     }
 
     @Override

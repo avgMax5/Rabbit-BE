@@ -32,8 +32,10 @@ import team.avgmax.rabbit.bunny.entity.enums.DeveloperType;
 import team.avgmax.rabbit.bunny.exception.BunnyError;
 import team.avgmax.rabbit.bunny.exception.BunnyException;
 import team.avgmax.rabbit.bunny.repository.*;
+import team.avgmax.rabbit.bunny.service.match.MatchingEngine;
+import team.avgmax.rabbit.bunny.service.match.MatchingResult;
 import team.avgmax.rabbit.bunny.service.webSocket.OrderBookAssembler;
-import team.avgmax.rabbit.global.policy.FeePolicy;
+import team.avgmax.rabbit.global.money.MoneyCalc;
 import team.avgmax.rabbit.user.dto.response.SpecResponse;
 import team.avgmax.rabbit.user.entity.CorporationUser;
 import team.avgmax.rabbit.user.entity.HoldBunny;
@@ -71,6 +73,7 @@ public class BunnyService {
     private final OrderBookAssembler orderBookAssembler;
     private final OrderBookPublisher orderBookPublisher;
     private final BunnyIndicatorService bunnyIndicatorService;
+    private final MatchingEngine matchingEngine;
 
     // 버니 목록 조회
     @Transactional(readOnly = true) // 읽기 전용
@@ -224,7 +227,7 @@ public class BunnyService {
     // 거래 주문 요청
     @Transactional
     public OrderResponse createOrder(String bunnyName, OrderRequest request, String userId) {
-        // 대상 버니/사용자 조회 및 잠금
+        // 사용자 조회 및 잠금
         Bunny bunny = bunnyRepository.findByBunnyName(bunnyName)
                 .orElseThrow(() -> new BunnyException(BunnyError.BUNNY_NOT_FOUND));
         PersonalUser user = personalUserRepository.findByIdForUpdate(userId);
@@ -246,14 +249,12 @@ public class BunnyService {
 
         // 매수 시 예약금(원금 + 수수료) 즉시 선차감
         if (myOrder.getOrderType() == OrderType.BUY) {
-            BigDecimal base = FeePolicy.normalize(myOrder.getQuantity().multiply(myOrder.getUnitPrice()));
-            BigDecimal fee = FeePolicy.calcFee(base);
-            BigDecimal reserved = FeePolicy.normalize(base.add(fee));
+            BigDecimal reserved = MoneyCalc.buyerReservation(myOrder.getQuantity(), myOrder.getUnitPrice());
             personalUserRepository.findByIdForUpdate(user.getId());
             user.subtractCarrot(reserved);
         }
 
-        // 오더북 Diff (체결이 0건이어도 내 가격 레벨 반영)
+        // 오더북 Diff 용 터치 가격 (체결이 0건이어도 내 가격 레벨 반영)
         final Set<BigDecimal> touchedBid = new HashSet<>();
         final Set<BigDecimal> touchedAsk = new HashSet<>();
         if (myOrder.getOrderType() == OrderType.BUY) {
@@ -267,84 +268,12 @@ public class BunnyService {
                 ? orderRepository.lockedSellCandidatesByPriceAsc(bunny.getId(), myOrder.getUnitPrice(), user.getId())
                 : orderRepository.lockedBuyCandidatesByPriceDesc(bunny.getId(), myOrder.getUnitPrice(), user.getId());
 
-        // 매칭 루프
-        BigDecimal remainingQty = myOrder.getQuantity();
-        for (Order counter : candidates) {
-            if (remainingQty.signum() <= 0) break;
-            if (counter.getQuantity().signum() <= 0) continue;
+        // 매칭 엔진 호출 (체결/정산/잔량처리)
+        MatchingResult result = matchingEngine.match(bunny, myOrder, candidates);
 
-            // 거래 가능 수량 = min(내잔여, 상대잔여)
-            BigDecimal tradable = remainingQty.min(counter.getQuantity());
-            if (tradable.signum() <= 0) continue;
-
-            BigDecimal tradePrice = counter.getUnitPrice();
-            BigDecimal tradeAmount = FeePolicy.normalize(tradable.multiply(tradePrice));
-
-            // 체결 기록
-            Match match = Match.builder()
-                    .bunny(bunny)
-                    .buyUser(myOrder.getOrderType() == OrderType.BUY ? myOrder.getUser() : counter.getUser())
-                    .sellUser(myOrder.getOrderType() == OrderType.SELL ? myOrder.getUser() : counter.getUser())
-                    .quantity(tradable)
-                    .unitPrice(tradePrice)
-                    .build();
-            matchRepository.save(match);
-
-            // 현재가 갱신 (가장 최근 체결가)
-            bunny.updateCurrentPrice(tradePrice);
-
-            // 정산 (보유/캐럿)
-            PersonalUser buyer  = match.getBuyUser();
-            PersonalUser seller = match.getSellUser();
-
-            personalUserRepository.findByIdForUpdate(buyer.getId());
-            personalUserRepository.findByIdForUpdate(seller.getId());
-
-            // 매도자 수입: 원금 - 수수료
-            BigDecimal sellerFee = FeePolicy.calcFee(tradeAmount);
-            BigDecimal sellerIncome = FeePolicy.normalize(tradeAmount.subtract(sellerFee));
-            personalUserRepository.addCarrotForUpdate(seller.getId(), sellerIncome);
-
-            // 매수자 예약금-실지출 차액 환불 (내 지정가 > 체결가일 경우)
-            if (myOrder.getOrderType() == OrderType.BUY) {
-                BigDecimal priceDiff = myOrder.getUnitPrice().subtract(tradePrice);
-                if (priceDiff.signum() > 0) {
-                    BigDecimal baseRefund = tradable.multiply(priceDiff);           // 원금 차액
-                    BigDecimal feeRefund = FeePolicy.calcFee(baseRefund);           // 차액에 대한 수수료 환불
-                    BigDecimal refund = baseRefund.add(feeRefund);                  // 총 환불 = 원금 + 수수료
-                    if (refund.signum() > 0) {
-                        personalUserRepository.addCarrotForUpdate(buyer.getId(), refund);
-                    }
-                }
-            }
-
-            // 보유 변동
-            holdBunnyRepository.addHoldForUpdate(buyer.getId(), bunny.getId(), tradable);
-            holdBunnyRepository.addHoldForUpdate(seller.getId(), bunny.getId(), tradable.negate());
-
-            // 주문 잔여 갱신
-            remainingQty = remainingQty.subtract(tradable);
-            counter.decreaseQuantity(tradable);
-
-            // 가격대 터치 기록
-            if (myOrder.getOrderType() == OrderType.BUY) {
-                touchedAsk.add(counter.getUnitPrice());
-            } else {
-                touchedBid.add(counter.getUnitPrice());
-            }
-
-            // 상대 주문 소진 시 제거
-            if (counter.getQuantity().signum() == 0) {
-                orderRepository.delete(counter);
-            }
-        }
-
-        // 내 주문 정리
-        if (remainingQty.signum() == 0) {
-            orderRepository.delete(myOrder); // 완전 체결 (삭제)
-        } else {
-            myOrder.updateQuantity(remainingQty); // 부분 체결 (잔여 저장)
-        }
+        // 터치 결과
+        touchedBid.addAll(result.touchedBid());
+        touchedAsk.addAll(result.touchedAsk());
 
         // Diff 발행 (커밋 후 전송)
         emitOrderBookDiff(bunny, touchedBid, touchedAsk);
@@ -374,9 +303,7 @@ public class BunnyService {
 
         // 매수자 취소 시 남은 잔여 예약금 환불
         if (order.getOrderType() == OrderType.BUY) {
-            BigDecimal baseRefund = order.getQuantity().multiply(order.getUnitPrice());
-            BigDecimal feeRefund = FeePolicy.calcFee(baseRefund);
-            BigDecimal refund = baseRefund.add(feeRefund);
+            BigDecimal refund = MoneyCalc.buyerCancelRefund(order.getQuantity(), order.getUnitPrice());
             personalUserRepository.addCarrotForUpdate(order.getUser().getId(), refund);
         }
 
@@ -521,6 +448,7 @@ public class BunnyService {
                     DeveloperType safeType =
                             (devType != null) ? devType : DeveloperType.BASIC;
 
+                    assert totalQuantity != null;
                     BigDecimal percentage = totalQuantity
                             .divide(totalSupply, 4, RoundingMode.HALF_UP)
                             .multiply(BigDecimal.valueOf(100));
@@ -599,11 +527,7 @@ public class BunnyService {
     }
 
     private void validateBuy(OrderRequest request, PersonalUser user) {
-        // 주문 총액(수수료 포함) = 수량 × 단가 × (1 + feeRate)
-        BigDecimal reserved = request.quantity()
-                .multiply(request.unitPrice())
-                .multiply(BigDecimal.ONE.add(FeePolicy.FEE_RATE));
-
+        BigDecimal reserved = MoneyCalc.buyerReservation(request.quantity(), request.unitPrice());
         BigDecimal currentCarrot = user.getCarrot();
 
         if (currentCarrot.compareTo(reserved) < 0) throw new BunnyException(BunnyError.INSUFFICIENT_BALANCE);
@@ -616,37 +540,21 @@ public class BunnyService {
                 .orElse(BigDecimal.ZERO);
 
         // 이미 걸려 있는 매도 주문들의 잔여 수량 합 (예약된 수량)
-        BigDecimal reserved = sumOpenSellReservedQty(user.getId(), bunny.getId());
+        BigDecimal reserved = reservedSellQuantity(user.getId(), bunny.getId());
 
         BigDecimal available = holding.subtract(reserved);
 
         if (available.compareTo(request.quantity()) < 0) throw new BunnyException(BunnyError.INSUFFICIENT_HOLDING);
     }
 
-    private BigDecimal sumOpenBuyReservedAmount(String userId) {
-        List<Order> orders = orderRepository
-                .findAllByUserAndSideOrderByCreatedAtAsc(userId, OrderType.BUY);
-
-        BigDecimal total = BigDecimal.ZERO;
-        for (Order order : orders) {
-            if (order.getQuantity().signum() > 0) {
-                BigDecimal costWithFee = order.getQuantity()
-                        .multiply(order.getUnitPrice())
-                        .multiply(BigDecimal.ONE.add(FeePolicy.FEE_RATE));
-                total = total.add(costWithFee);
-            }
-        }
-        return total;
-    }
-
-    private BigDecimal sumOpenSellReservedQty(String userId, String bunnyId) {
+    private BigDecimal reservedSellQuantity(String userId, String bunnyId) {
         List<Order> orders = orderRepository
                 .findAllByUserAndBunnyAndSideOrderByCreatedAtAsc(userId, bunnyId, OrderType.SELL);
 
         BigDecimal total = BigDecimal.ZERO;
-        for (Order o : orders) {
-            if (o.getQuantity().signum() > 0) {
-                total = total.add(o.getQuantity());
+        for (Order order : orders) {
+            if (order.getQuantity().signum() > 0) {
+                total = total.add(order.getQuantity());
             }
         }
         return total;
@@ -710,7 +618,7 @@ public class BunnyService {
     private List<OrderBookLevel> aggregateLevelsForPrices(String bunnyId, OrderType side, Set<BigDecimal> prices) {
         if (prices == null || prices.isEmpty()) return List.of();
 
-        // 레포에서 잔여>0 주문만 가져옴
+        // 레포에서 잔여 > 0 주문만 가져옴
         List<Order> rows = orderRepository.findAllByBunnySideAndPriceIn(bunnyId, side, prices);
 
         Map<BigDecimal, BigDecimal> sumByPrice = rows.stream()

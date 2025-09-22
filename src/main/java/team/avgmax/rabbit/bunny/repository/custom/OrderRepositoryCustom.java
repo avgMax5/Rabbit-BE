@@ -5,18 +5,11 @@ import team.avgmax.rabbit.bunny.entity.Order;
 import team.avgmax.rabbit.bunny.entity.enums.OrderType;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
 public interface OrderRepositoryCustom {
     OrderListResponse findOrdersByUserId(String personalUserId);
-
-    List<Order> findSellCandidatesByPriceAsc(String bunnyId, BigDecimal buyPrice, String excludeUserId);
-
-    List<Order> findBuyCandidatesByPriceDesc(String bunnyId, BigDecimal sellPrice, String excludeUserId);
-
-    List<Order> findAllByUserAndSideOrderByCreatedAtAsc(String userId, OrderType side);
 
     List<Order> findAllByUserAndBunnyAndSideOrderByCreatedAtAsc(String userId, String bunnyId, OrderType side);
 

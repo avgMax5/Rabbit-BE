@@ -51,4 +51,27 @@ public final class MoneyCalc {
     public static BigDecimal zero() {
         return FeePolicy.normalize(BigDecimal.ZERO);
     }
+
+    // 매도자 실수령
+    public static BigDecimal sellerIncome(BigDecimal tradeAmount) {
+        return FeePolicy.normalize(tradeAmount.subtract(feeOn(tradeAmount)));
+    }
+
+    public static record Trade(
+            BigDecimal tradeAmount,       // 체결 시 원금
+            BigDecimal buyerFee,          // 매수자 수수료
+            BigDecimal sellerFee,         // 매도자 수수료
+            BigDecimal sellerIncome,      // 매도자 실수령액 (tradeAmount - sellerFee)
+            BigDecimal buyerRefundTotal   // (지정가 > 체결가) 원금 + 수수료 환불
+    ) {}
+
+    public static Trade settleOne(BigDecimal filledQty, BigDecimal tradePrice, BigDecimal buyerLimitPrice) {
+        BigDecimal tradeAmount = baseAmount(filledQty, tradePrice);
+        BigDecimal buyerFee = feeOn(tradeAmount);
+        BigDecimal sellerFee = feeOn(tradeAmount);
+        BigDecimal income = sellerIncome(tradeAmount);
+        BigDecimal refund = buyerRefundForPriceImprovement(filledQty, tradePrice, buyerLimitPrice);
+
+        return new Trade(tradeAmount, buyerFee, sellerFee, income, refund);
+    }
 }
