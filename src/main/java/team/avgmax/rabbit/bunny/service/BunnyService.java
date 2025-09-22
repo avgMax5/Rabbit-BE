@@ -70,6 +70,7 @@ public class BunnyService {
     private final CorporationUserRepository corporationUserRepository;
     private final OrderBookAssembler orderBookAssembler;
     private final OrderBookPublisher orderBookPublisher;
+    private final BunnyIndicatorService bunnyIndicatorService;
 
     // 버니 목록 조회
     @Transactional(readOnly = true) // 읽기 전용
@@ -132,7 +133,7 @@ public class BunnyService {
                 .todayTime(LocalDate.now())
                 .monthlyGrowthRates(monthlyGrowRate)
                 .priceHistory(priceHistory)
-                .reliability(myBunny.getReliability()) // 추후 계산 로직 구상 시 구현
+                .reliability(myBunny.getReliability())
                 .currentPrice(myBunny.getCurrentPrice())
                 .closingPrice(myBunny.getClosingPrice())
                 .marketCap(myBunny.getMarketCap())
@@ -195,6 +196,9 @@ public class BunnyService {
             badgeRepository.save(Badge.create(bunny.getId(), userId, corporationUser.getCorporationName()));
         }
         bunny.addLikeCount();
+        bunnyIndicatorService.updateBunnyReliability(bunny);
+        bunnyIndicatorService.updateBunnyValue(bunny);
+        bunnyIndicatorService.updateBunnyPopularity(bunny);
     }
 
     // 좋아요 취소
@@ -207,6 +211,9 @@ public class BunnyService {
             return;
         }
         bunny.subtractLikeCount();
+        bunnyIndicatorService.updateBunnyReliability(bunny);
+        bunnyIndicatorService.updateBunnyValue(bunny);
+        bunnyIndicatorService.updateBunnyPopularity(bunny);
     }
 
     private Bunny findBunnyByName(String bunnyName) {
@@ -512,7 +519,7 @@ public class BunnyService {
                     Long holderCount = tuple.get(2, Long.class);
 
                     DeveloperType safeType =
-                            (devType != null) ? devType : DeveloperType.UNDEFINED;
+                            (devType != null) ? devType : DeveloperType.BASIC;
 
                     BigDecimal percentage = totalQuantity
                             .divide(totalSupply, 4, RoundingMode.HALF_UP)

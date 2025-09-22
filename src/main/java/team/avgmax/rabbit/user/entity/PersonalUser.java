@@ -2,6 +2,7 @@ package team.avgmax.rabbit.user.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,6 +21,7 @@ import team.avgmax.rabbit.user.dto.request.UpdatePersonalUserRequest;
 import team.avgmax.rabbit.user.entity.enums.Position;
 import team.avgmax.rabbit.user.exception.UserException;
 import team.avgmax.rabbit.user.exception.UserError;
+import team.avgmax.rabbit.user.entity.enums.Role;
 
 @Entity
 @Getter
@@ -77,6 +79,8 @@ public class PersonalUser extends User {
 
     String aiReview;
 
+    LocalDateTime specUpdatedAt;
+
     // === 연관관계 편의 메서드 ===
     public void addProvider(UserProvider provider) {
         providers.add(provider);
@@ -94,8 +98,14 @@ public class PersonalUser extends User {
         this.carrot = this.carrot.subtract(carrot);
     }
 
+    public void updateRoleToBunny() {
+        this.role = Role.ROLE_BUNNY;
+    }
+
     public void updatePersonalUser(UpdatePersonalUserRequest request) {
-        updateUser(request.name(), request.image(), request.email());
+        this.name = request.name();
+        this.image = request.image();
+        this.email = request.email();
         this.birthdate = request.birthdate();
         this.resume = request.resume();
         this.portfolio = request.portfolio();
@@ -130,6 +140,8 @@ public class PersonalUser extends User {
         this.education.addAll(request.education().stream()
             .map(Education::create)
             .toList());
+
+        this.specUpdatedAt = LocalDateTime.now();
     }
 
     public void updateAiReview(String aiReview) {

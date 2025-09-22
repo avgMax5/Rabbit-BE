@@ -7,10 +7,12 @@ import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import team.avgmax.rabbit.bunny.dto.response.ChartDataPoint;
+import team.avgmax.rabbit.bunny.entity.BunnyHistory;
 import team.avgmax.rabbit.bunny.entity.QBunnyHistory;
 import team.avgmax.rabbit.bunny.entity.enums.ChartInterval;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 
@@ -145,6 +147,22 @@ public class BunnyHistoryRepositoryCustomImpl implements BunnyHistoryRepositoryC
                 .where(bunnyHistory.bunnyId.eq(bunnyId))
                 .groupBy(monthKey)
                 .orderBy(monthKey.asc())
+                .fetch();
+    }
+    
+    @Override
+    public List<BunnyHistory> findRecentByBunnyIdOrderByDateAsc(String bunnyId, int days) {
+        if (bunnyId == null || days <= 0) return Collections.emptyList();
+        
+        LocalDate targetDate = LocalDate.now().minusDays(days);
+        
+        return queryFactory
+                .selectFrom(bunnyHistory)
+                .where(
+                        bunnyHistory.bunnyId.eq(bunnyId),
+                        bunnyHistory.date.goe(targetDate)
+                )
+                .orderBy(bunnyHistory.date.asc())
                 .fetch();
     }
 }

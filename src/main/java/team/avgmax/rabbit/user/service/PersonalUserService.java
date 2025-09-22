@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import team.avgmax.rabbit.ai.service.ChatClientService;
+import team.avgmax.rabbit.bunny.exception.BunnyException;
+import team.avgmax.rabbit.bunny.exception.BunnyError;
 import team.avgmax.rabbit.bunny.dto.response.MatchListResponse;
 import team.avgmax.rabbit.bunny.dto.response.MatchResponse;
 import team.avgmax.rabbit.bunny.dto.response.OrderListResponse;
@@ -15,6 +17,7 @@ import team.avgmax.rabbit.user.dto.request.UpdatePersonalUserRequest;
 import team.avgmax.rabbit.user.dto.response.CarrotsResponse;
 import team.avgmax.rabbit.user.dto.response.FetchUserResponse;
 import team.avgmax.rabbit.user.dto.response.HoldBunniesResponse;
+import team.avgmax.rabbit.user.dto.response.HoldBunniesStatsResponse;
 import team.avgmax.rabbit.user.dto.response.PersonalUserResponse;
 import team.avgmax.rabbit.user.entity.PersonalUser;
 import team.avgmax.rabbit.user.entity.enums.Role;
@@ -25,10 +28,12 @@ import team.avgmax.rabbit.user.entity.enums.ProviderType;
 import team.avgmax.rabbit.bunny.entity.Bunny;
 import team.avgmax.rabbit.bunny.entity.Match;
 import team.avgmax.rabbit.bunny.repository.BunnyRepository;
+import team.avgmax.rabbit.bunny.repository.OrderRepository;
+import team.avgmax.rabbit.user.entity.HoldBunny;
+import team.avgmax.rabbit.user.repository.HoldBunnyRepository;
 import team.avgmax.rabbit.user.repository.PersonalUserRepository;
-import team.avgmax.rabbit.user.repository.custom.HoldBunnyRepositoryCustomImpl;
-import team.avgmax.rabbit.bunny.repository.custom.MatchRepositoryCustomImpl;
-import team.avgmax.rabbit.bunny.repository.custom.OrderRepositoryCustomImpl;
+import team.avgmax.rabbit.bunny.repository.MatchRepository;
+import team.avgmax.rabbit.bunny.service.BunnyIndicatorService;
 
 @Service
 @RequiredArgsConstructor
@@ -36,10 +41,11 @@ public class PersonalUserService {
     private final ChatClientService chatClientService;
 
     private final PersonalUserRepository personalUserRepository;
-    private final OrderRepositoryCustomImpl orderRepositoryCustom;
-    private final MatchRepositoryCustomImpl matchRepositoryCustom;
-    private final HoldBunnyRepositoryCustomImpl holdBunnyRepositoryCustom;
+    private final OrderRepository orderRepository;
+    private final MatchRepository matchRepository;
+    private final HoldBunnyRepository holdBunnyRepository;
     private final BunnyRepository bunnyRepository;
+    private final BunnyIndicatorService bunnyIndicatorService;
 
     @Transactional
     public PersonalUser findOrCreateUser(String email, String name, String registrationId, String providerId) {
@@ -89,6 +95,13 @@ public class PersonalUserService {
         personalUser.updatePersonalUser(request);
         PersonalUser savedUser = personalUserRepository.save(personalUser);
 
+        if (bunnyRepository.existsByUserId(personalUserId)) {
+            Bunny bunny = bunnyRepository.findByUserId(personalUserId)
+                .orElseThrow(() -> new BunnyException(BunnyError.BUNNY_NOT_FOUND));
+            bunnyIndicatorService.updateBunnyReliability(bunny);
+            bunnyIndicatorService.updateBunnyValue(bunny);
+        }
+
         String aiReview = chatClientService.getAiReviewOfUserProfile(savedUser);
         savedUser.updateAiReview(aiReview);
 
@@ -104,12 +117,20 @@ public class PersonalUserService {
 
     @Transactional(readOnly = true)
     public HoldBunniesResponse getBunniesById(String personalUserId) {
-        return holdBunnyRepositoryCustom.findHoldBunniesByUserId(personalUserId);
+        return holdBunnyRepository.findHoldBunniesByUserId(personalUserId);
+    }
+
+    @Transactional(readOnly = true)
+    public HoldBunniesStatsResponse getBunniesStatsById(String personalUserId) {
+        PersonalUser personalUser = findPersonalUserById(personalUserId);
+        List<HoldBunny> holdBunnies = holdBunnyRepository.findByHolder(personalUser);
+
+        return HoldBunniesStatsResponse.from(holdBunnies);
     }
 
     @Transactional(readOnly = true)
     public OrderListResponse getOrdersById(String personalUserId) {
-        return orderRepositoryCustom.findOrdersByUserId(personalUserId);
+        return orderRepository.findOrdersByUserId(personalUserId);
     }
 
     @Transactional(readOnly = true)
@@ -120,7 +141,7 @@ public class PersonalUserService {
 
     @Transactional(readOnly = true)
     public MatchListResponse getMatchesById(String personalUserId){
-        List<Match> matches = matchRepositoryCustom.findMatchesByUserId(personalUserId);
+        List<Match> matches = matchRepository.findMatchesByUserId(personalUserId);
         List<MatchResponse> matchResponses = matches.stream()
             .map(match -> MatchResponse.from(match, personalUserId))
             .toList();
