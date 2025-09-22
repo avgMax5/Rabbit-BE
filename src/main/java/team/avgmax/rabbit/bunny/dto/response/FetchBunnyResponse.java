@@ -28,7 +28,7 @@ public class FetchBunnyResponse {
     private DeveloperType developerType;
     private BunnyType bunnyType;
     private Position position;
-    private BigDecimal reliability; // 신뢰도
+    private int reliability; // 신뢰도
 
     // 가격 정보
     private BigDecimal currentPrice;

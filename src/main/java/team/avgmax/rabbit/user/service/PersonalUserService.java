@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import team.avgmax.rabbit.ai.service.ChatClientService;
+import team.avgmax.rabbit.bunny.exception.BunnyException;
+import team.avgmax.rabbit.bunny.exception.BunnyError;
 import team.avgmax.rabbit.bunny.dto.response.MatchListResponse;
 import team.avgmax.rabbit.bunny.dto.response.MatchResponse;
 import team.avgmax.rabbit.bunny.dto.response.OrderListResponse;
@@ -31,6 +33,7 @@ import team.avgmax.rabbit.user.entity.HoldBunny;
 import team.avgmax.rabbit.user.repository.HoldBunnyRepository;
 import team.avgmax.rabbit.user.repository.PersonalUserRepository;
 import team.avgmax.rabbit.bunny.repository.MatchRepository;
+import team.avgmax.rabbit.bunny.service.BunnyIndicatorService;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +45,7 @@ public class PersonalUserService {
     private final MatchRepository matchRepository;
     private final HoldBunnyRepository holdBunnyRepository;
     private final BunnyRepository bunnyRepository;
+    private final BunnyIndicatorService bunnyIndicatorService;
 
     @Transactional
     public PersonalUser findOrCreateUser(String email, String name, String registrationId, String providerId) {
@@ -90,6 +94,13 @@ public class PersonalUserService {
         
         personalUser.updatePersonalUser(request);
         PersonalUser savedUser = personalUserRepository.save(personalUser);
+
+        if (bunnyRepository.existsByUserId(personalUserId)) {
+            Bunny bunny = bunnyRepository.findByUserId(personalUserId)
+                .orElseThrow(() -> new BunnyException(BunnyError.BUNNY_NOT_FOUND));
+            bunnyIndicatorService.updateBunnyReliability(bunny);
+            bunnyIndicatorService.updateBunnyValue(bunny);
+        }
 
         String aiReview = chatClientService.getAiReviewOfUserProfile(savedUser);
         savedUser.updateAiReview(aiReview);
