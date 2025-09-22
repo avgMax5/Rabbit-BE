@@ -99,30 +99,37 @@ public class Bunny extends BaseTime {
         this.likeCount--;
     }
 
+    public void updateCurrentPrice(BigDecimal price) {
+        if (price == null || price.signum() < 0) {
+            throw new IllegalArgumentException("invalid price");
+        }
+        this.currentPrice = price;
+    }
+
     public void updateReliability(double reliability) {
         this.reliability = (int) reliability;
     }
-    
+
     public void updateGrowth(double growth) {
         this.growth = (int) growth;
         updateDeveloperType();
     }
-    
+
     public void updateStability(double stability) {
         this.stability = (int) stability;
         updateDeveloperType();
     }
-    
+
     public void updateValue(double value) {
         this.value = (int) value;
         updateDeveloperType();
     }
-    
+
     public void updatePopularity(double popularity) {
         this.popularity = (int) popularity;
         updateDeveloperType();
     }
-    
+
     public void updateBalance(double balance) {
         this.balance = (int) balance;
         updateDeveloperType();

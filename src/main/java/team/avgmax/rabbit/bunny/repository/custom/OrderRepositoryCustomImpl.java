@@ -1,7 +1,6 @@
 package team.avgmax.rabbit.bunny.repository.custom;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -47,68 +46,6 @@ public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
     }
 
     @Override
-    public List<Order> findSellCandidatesByPriceAsc(String bunnyId, BigDecimal buyPrice, String excludeUserId) {
-        QOrder order = QOrder.order;
-
-        return queryFactory
-                .selectFrom(order)
-                .where(
-                        order.bunny.id.eq(bunnyId),
-                        order.orderType.eq(OrderType.SELL),
-                        order.unitPrice.loe(buyPrice),
-                        order.user.id.ne(excludeUserId)
-                )
-                .orderBy(order.unitPrice.asc(), order.createdAt.asc())
-                .fetch();
-    }
-
-    @Override
-    public List<Order> findBuyCandidatesByPriceDesc(String bunnyId, BigDecimal sellPrice, String excludeUserId) {
-        QOrder order = QOrder.order;
-
-        return queryFactory
-                .selectFrom(order)
-                .where(
-                        order.bunny.id.eq(bunnyId),
-                        order.orderType.eq(OrderType.BUY),
-                        order.unitPrice.goe(sellPrice),
-                        order.user.id.ne(excludeUserId)
-                )
-                .orderBy(order.unitPrice.desc(), order.createdAt.asc())
-                .fetch();
-    }
-
-    @Override
-    public BigDecimal sumPrevOrdersQuantity(String bunnyId, String userId, OrderType side, BigDecimal price, LocalDateTime currentCreatedAt) {
-        QOrder order = QOrder.order;
-
-        BigDecimal sum = queryFactory.select(order.quantity.sum())
-                .from(order)
-                .where(
-                        order.bunny.id.eq(bunnyId),
-                        order.user.id.eq(userId),
-                        order.orderType.eq(side),
-                        order.unitPrice.eq(price),
-                        order.createdAt.before(currentCreatedAt)
-                )
-                .fetchOne();
-
-        return sum != null ? sum : BigDecimal.ZERO;
-    }
-
-    @Override
-    public List<Order> findAllByUserAndSideOrderByCreatedAtAsc(String userId, OrderType side) {
-        QOrder order = QOrder.order;
-        return queryFactory.selectFrom(order)
-                .where(
-                        order.user.id.eq(userId),
-                        order.orderType.eq(side)
-                )
-                .orderBy(order.createdAt.asc())
-                .fetch();
-    }
-
-    @Override
     public List<Order> findAllByUserAndBunnyAndSideOrderByCreatedAtAsc(String userId, String bunnyId, OrderType side) {
         QOrder order = QOrder.order;
         return queryFactory.selectFrom(order)
@@ -144,7 +81,8 @@ public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
                 .selectFrom(order)
                 .where(
                         order.bunny.id.eq(bunnyId),
-                        order.orderType.eq(side)
+                        order.orderType.eq(side),
+                        order.quantity.gt(BigDecimal.ZERO)
                 );
 
         if (side == OrderType.BUY) {
@@ -153,8 +91,7 @@ public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
             query.orderBy(order.unitPrice.asc(), order.createdAt.asc(), order.id.asc());
         }
 
-        return query.limit(maxRows)
-                .fetch();
+        return query.limit(maxRows).fetch();
     }
 
     @Override
@@ -166,8 +103,41 @@ public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
                 .where(
                         order.bunny.id.eq(bunnyId),
                         order.orderType.eq(side),
-                        order.unitPrice.in(prices)
+                        order.unitPrice.in(prices),
+                        order.quantity.gt(BigDecimal.ZERO)
                 )
+                .fetch();
+    }
+
+    @Override
+    public List<Order> lockedSellCandidatesByPriceAsc(String bunnyId, BigDecimal buyPrice, String excludeUserId) {
+        QOrder order = QOrder.order;
+        return queryFactory.selectFrom(order)
+                .where(
+                        order.bunny.id.eq(bunnyId),
+                        order.orderType.eq(OrderType.SELL),
+                        order.unitPrice.loe(buyPrice),
+                        order.user.id.ne(excludeUserId),
+                        order.quantity.gt(BigDecimal.ZERO)
+                )
+                .orderBy(order.unitPrice.asc(), order.createdAt.asc(), order.id.asc())
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                .fetch();
+    }
+
+    @Override
+    public List<Order> lockedBuyCandidatesByPriceDesc(String bunnyId, BigDecimal sellPrice, String excludeUserId) {
+        QOrder order = QOrder.order;
+        return queryFactory.selectFrom(order)
+                .where(
+                        order.bunny.id.eq(bunnyId),
+                        order.orderType.eq(OrderType.BUY),
+                        order.unitPrice.goe(sellPrice),
+                        order.user.id.ne(excludeUserId),
+                        order.quantity.gt(BigDecimal.ZERO)
+                )
+                .orderBy(order.unitPrice.desc(), order.createdAt.asc(), order.id.asc())
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
                 .fetch();
     }
 
