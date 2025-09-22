@@ -12,6 +12,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import team.avgmax.rabbit.bunny.dto.data.MyBunnyByHolderData;
 import team.avgmax.rabbit.bunny.entity.QBunny;
+import team.avgmax.rabbit.global.util.UlidGenerator;
 import team.avgmax.rabbit.user.dto.response.HoldBunniesResponse;
 import team.avgmax.rabbit.user.dto.response.HoldBunnyResponse;
 import team.avgmax.rabbit.user.entity.QHoldBunny;
@@ -94,9 +95,10 @@ public class HoldBunnyRepositoryCustomImpl implements HoldBunnyRepositoryCustom 
                 .execute();
 
         if (updated == 0 && deltaQty.signum() > 0) {
+            String holdBunnyId = UlidGenerator.generateMonotonic();
             queryFactory.insert(hold)
-                    .columns(hold.holder.id, hold.bunny.id, hold.holdQuantity, hold.totalBuyAmount)
-                    .values(userId, bunnyId, deltaQty, BigDecimal.ZERO) // totalBuyAmount는 상황에 맞게
+                    .columns(hold.id, hold.holder.id, hold.bunny.id, hold.holdQuantity, hold.totalBuyAmount)
+                    .values(holdBunnyId, userId, bunnyId, deltaQty, BigDecimal.ZERO) // totalBuyAmount는 상황에 맞게
                     .execute();
         }
     }

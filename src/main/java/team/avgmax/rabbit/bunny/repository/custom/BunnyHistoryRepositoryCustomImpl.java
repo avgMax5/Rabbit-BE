@@ -1,8 +1,6 @@
 package team.avgmax.rabbit.bunny.repository.custom;
 
-import com.querydsl.core.types.dsl.Expressions;
-import com.querydsl.core.types.dsl.NumberExpression;
-import com.querydsl.core.types.dsl.NumberTemplate;
+import com.querydsl.core.types.dsl.*;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -71,7 +69,7 @@ public class BunnyHistoryRepositoryCustomImpl implements BunnyHistoryRepositoryC
                 .select(constructor(ChartDataPoint.class,
                         // 대표 날짜: 그 주의 마지막 날짜
                         bunnyHistory.date.max(),
-                        // 주간 가격 요약
+                        // 주간 고가/저가
                         bunnyHistory.highPrice.max(),
                         bunnyHistory.lowPrice.min(),
                         // 그 주의 마지막 날짜의 종가
@@ -102,25 +100,26 @@ public class BunnyHistoryRepositoryCustomImpl implements BunnyHistoryRepositoryC
     }
 
     private List<ChartDataPoint> fetchMonthly(String bunnyId) {
-        NumberTemplate<Integer> monthKey =
-                Expressions.numberTemplate(Integer.class, "EXTRACT(YEAR_MONTH FROM {0})", bunnyHistory.date);
+        StringTemplate monthKey =
+                Expressions.stringTemplate("DATE_FORMAT({0}, '%Y-%m')", bunnyHistory.date);
 
-        // 합계의 null 보정 (COALESCE(SUM(...), 0))
-        NumberExpression<BigDecimal> buySum =
+        // 합계 null 보정
+        NumberExpression<BigDecimal> buySum  =
                 Expressions.numberTemplate(BigDecimal.class, "COALESCE(SUM({0}), 0)", bunnyHistory.buyQuantity);
         NumberExpression<BigDecimal> sellSum =
                 Expressions.numberTemplate(BigDecimal.class, "COALESCE(SUM({0}), 0)", bunnyHistory.sellQuantity);
         NumberExpression<BigDecimal> tradeSum =
                 Expressions.numberTemplate(BigDecimal.class, "COALESCE(SUM({0}), 0)", bunnyHistory.tradeQuantity);
 
-        QBunnyHistory bhMax = new QBunnyHistory("mhMax");
-        QBunnyHistory bhLast = new QBunnyHistory("mhLast");
+        // 월 마지막 일자의 종가를 뽑기 위한 보조 별칭
+        QBunnyHistory bhMax  = new QBunnyHistory("bhMax");
+        QBunnyHistory bhLast = new QBunnyHistory("bhLast");
 
         return queryFactory
                 .select(constructor(ChartDataPoint.class,
-                        // 대표 날짜: 그 달의 마지막 날짜
+                        // 대표 날짜: 해당 달의 마지막 날짜 (메인 그룹에서 max)
                         bunnyHistory.date.max(),
-                        // 월간 가격 요약
+                        // 월간 고가/저가
                         bunnyHistory.highPrice.max(),
                         bunnyHistory.lowPrice.min(),
                         // 그 달의 마지막 날짜의 종가
@@ -128,13 +127,13 @@ public class BunnyHistoryRepositoryCustomImpl implements BunnyHistoryRepositoryC
                                 .from(bhLast)
                                 .where(
                                         bhLast.bunnyId.eq(bunnyId),
-                                        Expressions.numberTemplate(Integer.class, "EXTRACT(YEAR_MONTH FROM {0})", bhLast.date).eq(monthKey),
+                                        Expressions.stringTemplate("DATE_FORMAT({0}, '%Y-%m')", bhLast.date).eq(monthKey),
                                         bhLast.date.eq(
                                                 JPAExpressions.select(bhMax.date.max())
                                                         .from(bhMax)
                                                         .where(
                                                                 bhMax.bunnyId.eq(bunnyId),
-                                                                Expressions.numberTemplate(Integer.class, "EXTRACT(YEAR_MONTH FROM {0})", bhMax.date).eq(monthKey)
+                                                                Expressions.stringTemplate("DATE_FORMAT({0}, '%Y-%m')", bhMax.date).eq(monthKey)
                                                         )
                                         )
                                 ),
@@ -149,13 +148,13 @@ public class BunnyHistoryRepositoryCustomImpl implements BunnyHistoryRepositoryC
                 .orderBy(monthKey.asc())
                 .fetch();
     }
-    
+
     @Override
     public List<BunnyHistory> findRecentByBunnyIdOrderByDateAsc(String bunnyId, int days) {
         if (bunnyId == null || days <= 0) return Collections.emptyList();
-        
+
         LocalDate targetDate = LocalDate.now().minusDays(days);
-        
+
         return queryFactory
                 .selectFrom(bunnyHistory)
                 .where(

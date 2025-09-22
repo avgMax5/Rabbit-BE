@@ -159,7 +159,7 @@ public class Bunny extends BaseTime {
             this.developerType = DeveloperType.BASIC; // 기본값
         }
     }
-    
+
     public void updateAiReviewAndFeedback(String aiReview, String aiFeedback) {
         this.aiReview = aiReview;
         this.aiFeedback = aiFeedback;

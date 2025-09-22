@@ -86,7 +86,6 @@ public class MatchingEngine {
 
             // 보유 변동
             holdBunnyRepository.addHoldForUpdate(buyer.getId(),  bunny.getId(), tradable);
-            holdBunnyRepository.addHoldForUpdate(seller.getId(), bunny.getId(), tradable.negate());
 
             // 주문 잔량 갱신
             remainingQty = remainingQty.subtract(tradable);
