@@ -12,6 +12,8 @@ import team.avgmax.rabbit.funding.entity.FundBunny;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
+import java.time.LocalDateTime;
 
 import team.avgmax.rabbit.user.entity.PersonalUser;
 
@@ -40,7 +42,8 @@ public class Bunny extends BaseTime {
     @Enumerated(EnumType.STRING)
     private BunnyType bunnyType;
 
-    private BigDecimal reliability;
+    @Builder.Default
+    private int reliability = 10;
 
     private BigDecimal currentPrice; 
 
@@ -48,15 +51,20 @@ public class Bunny extends BaseTime {
 
     private BigDecimal marketCap;
 
-    private int growth;
+    @Builder.Default
+    private int growth = 10;
 
-    private int stability;
+    @Builder.Default
+    private int stability = 10;
 
-    private int value;
+    @Builder.Default
+    private int value = 10;
 
-    private int popularity;
+    @Builder.Default
+    private int popularity = 10;
 
-    private int balance;
+    @Builder.Default
+    private int balance = 10;
     
     private String aiReview;
 
@@ -75,7 +83,6 @@ public class Bunny extends BaseTime {
                 .bunnyName(fundBunny.getBunnyName())
                 .developerType(DeveloperType.BASIC)
                 .bunnyType(fundBunny.getType())
-                .reliability(BigDecimal.ZERO) // 추후 계산 로직 추가
                 .currentPrice(fundBunny.getType().getPrice())
                 .closingPrice(fundBunny.getType().getPrice())
                 .marketCap(fundBunny.getType().getMarketCap())
@@ -90,5 +97,57 @@ public class Bunny extends BaseTime {
 
     public void subtractLikeCount() {
         this.likeCount--;
+    }
+
+    public void updateReliability(double reliability) {
+        this.reliability = (int) reliability;
+    }
+    
+    public void updateGrowth(double growth) {
+        this.growth = (int) growth;
+        updateDeveloperType();
+    }
+    
+    public void updateStability(double stability) {
+        this.stability = (int) stability;
+        updateDeveloperType();
+    }
+    
+    public void updateValue(double value) {
+        this.value = (int) value;
+        updateDeveloperType();
+    }
+    
+    public void updatePopularity(double popularity) {
+        this.popularity = (int) popularity;
+        updateDeveloperType();
+    }
+    
+    public void updateBalance(double balance) {
+        this.balance = (int) balance;
+        updateDeveloperType();
+    }
+
+    private void updateDeveloperType() {
+        // 생성 후 7일 이내는 BASIC 유지
+        if (this.getCreatedAt().isAfter(LocalDateTime.now().minusDays(7))) {
+            this.developerType = DeveloperType.BASIC;
+            return;
+        }
+
+        int maxScore = IntStream.of(growth, stability, value, popularity, balance).max().orElseThrow();
+        if (maxScore == growth) {
+            this.developerType = DeveloperType.GROWTH;
+        } else if (maxScore == stability) {
+            this.developerType = DeveloperType.STABLE;
+        } else if (maxScore == value) {
+            this.developerType = DeveloperType.VALUE;
+        } else if (maxScore == popularity) {
+            this.developerType = DeveloperType.POPULAR;
+        } else if (maxScore == balance) {
+            this.developerType = DeveloperType.BALANCE;
+        } else {
+            this.developerType = DeveloperType.BASIC; // 기본값
+        }
     }
 }
