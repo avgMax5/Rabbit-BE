@@ -21,6 +21,7 @@ import team.avgmax.rabbit.funding.entity.Funding;
 import team.avgmax.rabbit.funding.exception.FundingError;
 import team.avgmax.rabbit.funding.exception.FundingException;
 import team.avgmax.rabbit.bunny.repository.BunnyRepository;
+import team.avgmax.rabbit.ai.service.ChatClientService;
 import team.avgmax.rabbit.funding.repository.FundBunnyRepository;
 import team.avgmax.rabbit.funding.repository.FundingRepository;
 import team.avgmax.rabbit.user.repository.HoldBunnyRepository;
@@ -42,6 +43,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class FundingService {
     private final PersonalUserService personalUserService;
+    private final ChatClientService chatClientService;
 
     private final FundingRepository fundingRepository;
     private final FundBunnyRepository fundBunnyRepository;
@@ -63,12 +65,11 @@ public class FundingService {
         validateAlreadyFundBunnyUser(user);
         validateBunnyName(request.bunnyName());
         validateBunnyType(request.bunnyType());
-        FundBunny fundBunny = FundBunny.create(request, user, fundBunnyExpiry);
-        FundBunny savedFundBunny = fundBunnyRepository.save(fundBunny);
+        FundBunny fundBunny = fundBunnyRepository.save(FundBunny.create(request, user, fundBunnyExpiry));
         
-        redisUtil.setData("fund_bunny:" + savedFundBunny.getId(), "expiration_marker", fundBunnyExpiry);
+        redisUtil.setData("fund_bunny:" + fundBunny.getId(), "expiration_marker", fundBunnyExpiry);
         
-        return FundBunnyResponse.from(savedFundBunny);
+        return FundBunnyResponse.from(fundBunny);
     }
 
     @Transactional(readOnly = true)
@@ -179,9 +180,8 @@ public class FundingService {
         fundBunny.getUser().updateRoleToBunny();
 
         // 2. FundBunny를 Bunny로 변환하여 저장
-        Bunny bunny = fundBunny.convertToBunny();
-        bunnyRepository.save(bunny);
-        
+        Bunny bunny = bunnyRepository.save(fundBunny.convertToBunny());
+
         // 3. 해당 FundBunny의 모든 Funding 조회
         List<Funding> fundings = fundingRepository.findByFundBunny(fundBunny);
         
@@ -189,10 +189,15 @@ public class FundingService {
         List<HoldBunny> holdBunnies = fundBunny.createHoldBunnies(bunny, fundings);
         holdBunnyRepository.saveAll(holdBunnies);
 
-        // 5. Redis에서 만료 키 제거 (상장되면 만료 처리할 필요 없음)
+        // 5. AI Review와 AI Feedback 생성
+        String aiReview = chatClientService.getAiReviewOfBunny(bunny);
+        String aiFeedback = chatClientService.getAiFeedbackOfBunny(bunny);
+        bunny.updateAiReviewAndFeedback(aiReview, aiFeedback);
+
+        // 6. Redis에서 만료 키 제거 (상장되면 만료 처리할 필요 없음)
         redisUtil.deleteData("fund_bunny:" + fundBunny.getId());
 
-        // 6. FundBunny 삭제 (CASCADE로 Funding도 함께 삭제)
+        // 7. FundBunny 삭제 (CASCADE로 Funding도 함께 삭제)
         fundBunnyRepository.delete(fundBunny);
     }
 
