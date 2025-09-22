@@ -11,8 +11,11 @@ import team.avgmax.rabbit.user.entity.PersonalUser;
 import team.avgmax.rabbit.user.repository.custom.HoldBunnyRepositoryCustom;
 
 import java.util.Optional;
+import java.util.List;
 
 public interface HoldBunnyRepository extends JpaRepository<HoldBunny, String>, HoldBunnyRepositoryCustom {
+
+    List<HoldBunny> findByHolder(PersonalUser holder);
 
     Optional<HoldBunny> findByHolderAndBunny(PersonalUser holder, Bunny bunny);
 

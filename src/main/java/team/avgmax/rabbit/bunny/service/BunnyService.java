@@ -455,7 +455,7 @@ public class BunnyService {
                     Long holderCount = tuple.get(2, Long.class);
 
                     DeveloperType safeType =
-                            (devType != null) ? devType : DeveloperType.UNDEFINED;
+                            (devType != null) ? devType : DeveloperType.BASIC;
 
                     BigDecimal percentage = totalQuantity
                             .divide(totalSupply, 4, RoundingMode.HALF_UP)
