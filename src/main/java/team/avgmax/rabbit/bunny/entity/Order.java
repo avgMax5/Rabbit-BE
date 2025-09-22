@@ -38,4 +38,21 @@ public class Order extends BaseTime {
 
     @Enumerated(EnumType.STRING)
     private OrderType orderType;
+
+    public void decreaseQuantity(BigDecimal delta) {
+        if (delta == null || delta.signum() <= 0) {
+            throw new IllegalArgumentException("delta must be > 0");
+        }
+        this.quantity = this.quantity.subtract(delta);
+        if (this.quantity.signum() < 0) {
+            throw new IllegalStateException("quantity < 0");
+        }
+    }
+
+    public void updateQuantity(BigDecimal newQty) {
+        if (newQty == null || newQty.signum() < 0) {
+            throw new IllegalArgumentException("newQty must be >= 0");
+        }
+        this.quantity = newQty;
+    }
 }

@@ -126,12 +126,12 @@ public class BunnyController {
     public ResponseEntity<Void> cancelOrder(
             @PathVariable String bunnyName,
             @PathVariable String orderId,
-            @AuthenticationPrincipal CustomOAuth2User user
+            @AuthenticationPrincipal Jwt jwt
     ) {
-        log.info("DELETE 거래 주문 취소 : bunny={}, orderId={}, user={}", bunnyName, orderId, user.getName());
+        String userId = jwt.getSubject();
+        log.info("DELETE 거래 주문 취소 : bunny={}, orderId={}, user={}", bunnyName, orderId, userId);
 
-        PersonalUser principal = user.getPersonalUser();
-        bunnyService.cancelOrder(bunnyName, orderId, principal);
+        bunnyService.cancelOrder(bunnyName, orderId, userId);
 
         return ResponseEntity.noContent().build();
     }

@@ -39,7 +39,7 @@ public class MyBunnyResponse {
     private List<DailyPriceData> priceHistory;
 
     // 요구사항 3: 시장 신뢰도
-    private BigDecimal reliability;
+    private int reliability;
 
     // 요구사항 4: 시가총액, 현재가, 종가
     private BigDecimal currentPrice;

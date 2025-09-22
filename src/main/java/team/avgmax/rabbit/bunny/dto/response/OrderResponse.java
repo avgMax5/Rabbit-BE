@@ -29,7 +29,8 @@ public record OrderResponse(
     public static OrderResponse from(Order order) {
         BigDecimal total = order.getQuantity().multiply(order.getUnitPrice());
         BigDecimal fee = FeePolicy.calcFee(total);
-        BigDecimal finalAmount = total.subtract(fee);
+
+        BigDecimal finalAmount = (order.getOrderType() == OrderType.BUY) ? total.add(fee) : total.subtract(fee);
 
         return OrderResponse.builder()
                 .orderId(order.getId())
@@ -41,7 +42,7 @@ public record OrderResponse(
                 .totalAmount(total)
                 .fee(fee)
                 .finalAmount(finalAmount)
-                .createdAt(order.getCreatedAt())
+                .createdAt(LocalDateTime.now())
                 .build();
     }
 }

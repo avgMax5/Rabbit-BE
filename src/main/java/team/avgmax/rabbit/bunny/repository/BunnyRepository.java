@@ -23,4 +23,5 @@ public interface BunnyRepository extends JpaRepository<Bunny, String>, BunnyRepo
 
     Optional<Bunny> findByUserId(String userId);
 
+    boolean existsByUserId(String userId);
 }
