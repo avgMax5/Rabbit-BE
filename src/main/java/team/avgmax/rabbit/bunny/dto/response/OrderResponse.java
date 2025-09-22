@@ -42,7 +42,7 @@ public record OrderResponse(
                 .totalAmount(total)
                 .fee(fee)
                 .finalAmount(finalAmount)
-                .createdAt(order.getCreatedAt())
+                .createdAt(LocalDateTime.now())
                 .build();
     }
 }

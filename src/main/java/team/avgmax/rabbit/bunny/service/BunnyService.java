@@ -254,6 +254,11 @@ public class BunnyService {
             user.subtractCarrot(reserved);
         }
 
+        // 매도 시 매도량만큼 즉시 선차감
+        if (myOrder.getOrderType() == OrderType.SELL) {
+            holdBunnyRepository.addHoldForUpdate(user.getId(), bunny.getId(), myOrder.getQuantity().negate());
+        }
+
         // 오더북 Diff 용 터치 가격 (체결이 0건이어도 내 가격 레벨 반영)
         final Set<BigDecimal> touchedBid = new HashSet<>();
         final Set<BigDecimal> touchedAsk = new HashSet<>();
@@ -283,7 +288,7 @@ public class BunnyService {
 
     // 거래 주문 취소
     @Transactional
-    public void cancelOrder(String bunnyName, String orderId, PersonalUser principal) {
+    public void cancelOrder(String bunnyName, String orderId, String userId) {
         Bunny bunny = bunnyRepository.findByBunnyName(bunnyName)
                 .orElseThrow(() -> new BunnyException(BunnyError.BUNNY_NOT_FOUND));
 
@@ -292,7 +297,7 @@ public class BunnyService {
         if (order == null) throw new BunnyException(BunnyError.ORDER_NOT_FOUND);
 
         // 소유자 검증
-        if (!order.getUser().getId().equals(principal.getId())) {
+        if (!order.getUser().getId().equals(userId)) {
             throw new BunnyException(BunnyError.FORBIDDEN);
         }
 
@@ -305,6 +310,11 @@ public class BunnyService {
         if (order.getOrderType() == OrderType.BUY) {
             BigDecimal refund = MoneyCalc.buyerCancelRefund(order.getQuantity(), order.getUnitPrice());
             personalUserRepository.addCarrotForUpdate(order.getUser().getId(), refund);
+        }
+
+        // 매도자 취소시 남은 잔여 수량 복원
+        if (order.getOrderType() == OrderType.SELL) {
+            holdBunnyRepository.addHoldForUpdate(order.getUser().getId(), bunny.getId(), order.getQuantity());
         }
 
         // 주문 삭제 (취소 처리)
@@ -534,17 +544,11 @@ public class BunnyService {
     }
 
     private void validateSell(Bunny bunny, OrderRequest request, PersonalUser user) {
-        // 현재 보유 수량
         BigDecimal holding = holdBunnyRepository.findByHolderAndBunny(user, bunny)
                 .map(HoldBunny::getHoldQuantity)
                 .orElse(BigDecimal.ZERO);
 
-        // 이미 걸려 있는 매도 주문들의 잔여 수량 합 (예약된 수량)
-        BigDecimal reserved = reservedSellQuantity(user.getId(), bunny.getId());
-
-        BigDecimal available = holding.subtract(reserved);
-
-        if (available.compareTo(request.quantity()) < 0) throw new BunnyException(BunnyError.INSUFFICIENT_HOLDING);
+        if (holding.compareTo(request.quantity()) < 0) throw new BunnyException(BunnyError.INSUFFICIENT_HOLDING);
     }
 
     private BigDecimal reservedSellQuantity(String userId, String bunnyId) {
