@@ -16,8 +16,6 @@ public interface OrderRepositoryCustom {
 
     List<Order> findBuyCandidatesByPriceDesc(String bunnyId, BigDecimal sellPrice, String excludeUserId);
 
-    BigDecimal sumPrevOrdersQuantity(String bunnyId, String userId, OrderType side, BigDecimal price, LocalDateTime currentCreatedAt);
-
     List<Order> findAllByUserAndSideOrderByCreatedAtAsc(String userId, OrderType side);
 
     List<Order> findAllByUserAndBunnyAndSideOrderByCreatedAtAsc(String userId, String bunnyId, OrderType side);
@@ -27,4 +25,8 @@ public interface OrderRepositoryCustom {
     List<Order> findAllByBunnyAndSideForOrderBook(String bunnyId, OrderType side);
 
     List<Order> findAllByBunnySideAndPriceIn(String bunnyId, OrderType side, Set<BigDecimal> prices);
+
+    List<Order> lockedSellCandidatesByPriceAsc(String bunnyId, BigDecimal buyPrice, String excludeUserId);
+
+    List<Order> lockedBuyCandidatesByPriceDesc(String bunnyId, BigDecimal sellPrice, String excludeUserId);
 }

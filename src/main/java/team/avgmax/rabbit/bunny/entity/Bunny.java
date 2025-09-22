@@ -91,4 +91,11 @@ public class Bunny extends BaseTime {
     public void subtractLikeCount() {
         this.likeCount--;
     }
+
+    public void updateCurrentPrice(BigDecimal price) {
+        if (price == null || price.signum() < 0) {
+            throw new IllegalArgumentException("invalid price");
+        }
+        this.currentPrice = price;
+    }
 }
