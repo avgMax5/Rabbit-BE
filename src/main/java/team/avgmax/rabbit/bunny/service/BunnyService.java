@@ -261,7 +261,7 @@ public class BunnyService {
         switch (request.orderType()) {
             case BUY -> validateBuy(request, user);
             case SELL -> validateSell(bunny, request, user);
-            default -> throw new IllegalArgumentException("지원하지 않는 타입");
+            default -> throw new BunnyException(BunnyError.UNSUPPORTED_ORDER_TYPE);
         }
 
         // 신규 주문 저장 (초기 quantity = 요청 수량)
@@ -277,7 +277,7 @@ public class BunnyService {
 
         // 매도 시 매도량만큼 즉시 선차감
         if (myOrder.getOrderType() == OrderType.SELL) {
-            holdBunnyRepository.addHoldForUpdate(user.getId(), bunny.getId(), myOrder.getQuantity().negate());
+            holdBunnyRepository.adjustReservation(user.getId(), bunny.getId(), myOrder.getQuantity().negate());
         }
 
         // 오더북 Diff 용 터치 가격 (체결이 0건이어도 내 가격 레벨 반영)
@@ -335,7 +335,7 @@ public class BunnyService {
 
         // 매도자 취소시 남은 잔여 예약 수량 복원
         if (order.getOrderType() == OrderType.SELL) {
-            holdBunnyRepository.addHoldForUpdate(order.getUser().getId(), bunny.getId(), order.getQuantity());
+            holdBunnyRepository.adjustReservation(order.getUser().getId(), bunny.getId(), order.getQuantity());
         }
 
         // 주문 삭제 (취소 처리)
