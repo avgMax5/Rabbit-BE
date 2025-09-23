@@ -9,7 +9,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
 import team.avgmax.rabbit.user.dto.request.UpdatePersonalUserRequest;
 import team.avgmax.rabbit.user.dto.response.CarrotsResponse;
@@ -17,6 +20,7 @@ import team.avgmax.rabbit.user.dto.response.FetchUserResponse;
 import team.avgmax.rabbit.user.dto.response.HoldBunniesResponse;
 import team.avgmax.rabbit.user.dto.response.HoldBunniesStatsResponse;
 import team.avgmax.rabbit.user.dto.response.PersonalUserResponse;
+import team.avgmax.rabbit.bunny.dto.response.MatchListResponse;
 import team.avgmax.rabbit.bunny.dto.response.OrderListResponse;
 
 @Tag(name = "PersonalUser", description = "개인 사용자 API")
@@ -52,6 +56,10 @@ public interface PersonalUserApiDocs {
         @Parameter(description = "JWT 토큰", hidden = true) Jwt jwt
     );
 
+    @Operation(
+        summary = "나의 정보 조회",
+        description = "현재 로그인한 사용자의 정보를 조회합니다."
+    )
     @ApiResponse(
         responseCode = "200",
         description = "나의 정보 조회 성공",
@@ -435,4 +443,73 @@ public interface PersonalUserApiDocs {
     ResponseEntity<OrderListResponse> getMyOrders(
         @Parameter(description = "JWT 토큰", hidden = true) Jwt jwt
     );
+
+
+    
+    @Operation(
+        summary = "파일 업로드",
+        description = "파일을 minio 서버로 업로드합니다."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "파일 업로드 성공",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = String.class),
+                examples = @ExampleObject(
+                    value = "https://minio.avgmax.team/rabbit/filename.extension"
+                )
+            )
+        )
+    })
+    ResponseEntity<String> upload(
+        @Parameter(description = "파일 업로드", hidden = true) MultipartFile file, 
+        @Parameter(description = "JWT 토큰", hidden = true) Jwt jwt
+    );
+    
+    @Operation(
+        summary = "체결 주문 목록 조회",
+        description = "현재 로그인한 사용자의 체결 주문 내역을 조회합니다."
+    )
+     @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "체결 주문 목록 조회 성공",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = MatchListResponse.class),
+                examples = @ExampleObject(
+                    value = """
+                    {
+                        "matches": [
+                            {
+                                "match_id": "01HZXMATCH00000000000000002",
+                                "bunny_name": "bunny-001",
+                                "quantity": 50,
+                                "unit_price": 2000,
+                                "total_amount": 100000,
+                                "fee": 100,
+                                "matched_at": "2025-09-23T02:29:46.932Z"
+                            },
+                            {
+                                "match_id": "01HZXMATCH00000000000000001",
+                                "bunny_name": "bunny-002",
+                                "quantity": 20,
+                                "unit_price": 3000,
+                                "total_amount": 60000,
+                                "fee": 60,
+                                "matched_at": "2025-09-22T02:29:46.932Z"
+                            }
+                        ]
+                    }
+                    """
+                )
+            )
+        )
+    })
+    ResponseEntity<MatchListResponse> getMyMatches(
+         @Parameter(description = "JWT 토큰", hidden = true) Jwt jwt
+    );
+
 }
