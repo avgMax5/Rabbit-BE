@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import team.avgmax.rabbit.auth.oauth2.CustomOAuth2User;
 import team.avgmax.rabbit.bunny.dto.orderBook.OrderBookSnapshot;
 import team.avgmax.rabbit.bunny.dto.request.OrderRequest;
 import team.avgmax.rabbit.bunny.dto.response.ChartResponse;
@@ -20,7 +19,6 @@ import team.avgmax.rabbit.bunny.entity.enums.BunnyFilter;
 import team.avgmax.rabbit.bunny.entity.enums.ChartInterval;
 import team.avgmax.rabbit.bunny.service.BunnyService;
 import team.avgmax.rabbit.bunny.dto.response.OrderResponse;
-import team.avgmax.rabbit.user.entity.PersonalUser;
 import team.avgmax.rabbit.user.entity.enums.Role;
 
 import java.net.URI;
@@ -30,7 +28,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(value = "/bunnies", produces = "application/json")
-public class BunnyController {
+public class BunnyController implements BunnyApiDocs {
 
     private final BunnyService bunnyService;
 
