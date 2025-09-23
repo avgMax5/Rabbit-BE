@@ -19,6 +19,7 @@ import team.avgmax.rabbit.bunny.entity.enums.BunnyFilter;
 import team.avgmax.rabbit.bunny.entity.enums.ChartInterval;
 import team.avgmax.rabbit.bunny.service.BunnyService;
 import team.avgmax.rabbit.bunny.dto.response.OrderResponse;
+import team.avgmax.rabbit.bunny.dto.response.RabbitIndexResponse;
 import team.avgmax.rabbit.user.entity.enums.Role;
 
 import java.net.URI;
@@ -31,6 +32,13 @@ import java.util.List;
 public class BunnyController implements BunnyApiDocs {
 
     private final BunnyService bunnyService;
+
+    // RABBIT 지수 조회
+    @GetMapping("/rabbit-index")
+    public ResponseEntity<RabbitIndexResponse> getRabbitIndex() {
+        log.info("GET RABBIT 지수 조회");
+        return ResponseEntity.ok(bunnyService.getRabbitIndex());
+    }
 
     // 버니 목록 조회
     @GetMapping
