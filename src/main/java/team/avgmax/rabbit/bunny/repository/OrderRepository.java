@@ -9,4 +9,5 @@ import team.avgmax.rabbit.bunny.repository.custom.OrderRepositoryCustom;
 
 public interface OrderRepository extends JpaRepository<Order, String>, OrderRepositoryCustom {
     List<Order> findAllByBunnyIdAndUserId(String bunnyId, String userId);
+    List<Order> findOrdersByUserId(String personalUserId);
 }

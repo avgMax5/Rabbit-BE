@@ -20,6 +20,7 @@ public record MatchResponse(
     BigDecimal unitPrice,
     BigDecimal totalAmount,
     BigDecimal fee,
+    String orderType,
     LocalDateTime matchedAt
 
 ) {
@@ -27,12 +28,14 @@ public record MatchResponse(
         BigDecimal total = match.getQuantity().multiply(match.getUnitPrice());
         BigDecimal fee = FeePolicy.calcFee(total);
 
-        // String orderType = "";
-        // if (match.getSellUser().getId().equals(personalUserId)) {
-        //     orderType = "SELL";
-        // } else if (match.getBuyUser().getId().equals(personalUserId)) {
-        //     orderType = "BUY";
-        // }
+        String orderType;
+        if (match.getSellUser().getId().equals(personalUserId)) {
+            orderType = "SELL";
+        } else if (match.getBuyUser().getId().equals(personalUserId)) {
+            orderType = "BUY";
+        } else {
+            orderType = "UNKNOWN";
+        }
 
         return MatchResponse.builder()
                 .matchId(match.getId())
@@ -41,6 +44,7 @@ public record MatchResponse(
                 .unitPrice(match.getUnitPrice())
                 .totalAmount(total.add(fee))
                 .fee(fee)
+                .orderType(orderType)
                 .matchedAt(match.getCreatedAt())
                 .build();
     }
