@@ -21,4 +21,6 @@ public interface BunnyRepositoryCustom {
 
     List<Bunny> findAllWithUserOrderByMarketCapDesc();
 
+    BigDecimal sumCurrentMarketCap();
+
 }
