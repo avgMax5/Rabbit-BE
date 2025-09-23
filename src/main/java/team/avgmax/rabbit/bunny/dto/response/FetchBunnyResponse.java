@@ -9,6 +9,7 @@ import team.avgmax.rabbit.bunny.entity.Badge;
 import team.avgmax.rabbit.bunny.entity.Bunny;
 import team.avgmax.rabbit.bunny.entity.enums.BunnyType;
 import team.avgmax.rabbit.bunny.entity.enums.DeveloperType;
+import team.avgmax.rabbit.user.dto.response.SpecResponse;
 import team.avgmax.rabbit.user.entity.enums.Position;
 
 import java.math.BigDecimal;
@@ -52,6 +53,9 @@ public class FetchBunnyResponse {
     // 좋아요 수
     private long likeCount;
 
+    // 해당 버니의 스펙
+    private SpecResponse spec;
+
     // 시간
     private LocalDateTime createdAt; // 생성시간
 
@@ -75,6 +79,7 @@ public class FetchBunnyResponse {
                 .badges(bunny.getBadges().stream().map(Badge::getBadgeImg).toList())
                 .aiReview(bunny.getAiReview())
                 .likeCount(bunny.getLikeCount())
+                .spec(SpecResponse.from(bunny.getUser()))
                 .createdAt(bunny.getCreatedAt())
                 .build();
     }

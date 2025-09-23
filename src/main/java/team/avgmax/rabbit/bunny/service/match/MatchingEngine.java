@@ -48,7 +48,6 @@ public class MatchingEngine {
 
             BigDecimal tradePrice   = counter.getUnitPrice();                     // 체결가
             BigDecimal tradeBaseAmt = MoneyCalc.baseAmount(tradable, tradePrice); // 원금(원)
-            BigDecimal sellerFee    = MoneyCalc.feeOn(tradeBaseAmt);              // 매도자 수수료(원)
 
             // 체결 기록
             Match match = Match.builder()
@@ -77,17 +76,15 @@ public class MatchingEngine {
 
             // 매수자 예약금-실지출 차액 환불
             if (myOrder.getOrderType() == OrderType.BUY) {
-                BigDecimal refund = MoneyCalc.buyerRefundForPriceImprovement(
-                        myOrder.getUnitPrice(), tradePrice, tradable
-                );
+                BigDecimal refund = MoneyCalc.buyerRefundForPriceImprovement(myOrder.getUnitPrice(), tradePrice, tradable);
                 if (refund.signum() > 0) {
                     personalUserRepository.addCarrotForUpdate(buyer.getId(), refund);
                 }
             }
 
             // 보유 변동
-            holdBunnyRepository.upsertForTrade(buyer.getId(), bunny.getId(), tradable, tradeBaseAmt, true);
-            holdBunnyRepository.upsertForTrade(seller.getId(), bunny.getId(), tradable.negate(), BigDecimal.ZERO, true);
+            holdBunnyRepository.applyBuyMatch(buyer.getId(), bunny.getId(), tradable, tradeBaseAmt);
+            holdBunnyRepository.applySellMatch(seller.getId(), bunny.getId(), tradable);
 
             // 주문 잔량 갱신
             remainingQty = remainingQty.subtract(tradable);
@@ -96,6 +93,9 @@ public class MatchingEngine {
             // 상대 주문이 0이면 제거
             if (counter.getQuantity().signum() == 0) {
                 orderRepository.delete(counter);
+                if (counter.getOrderType() == OrderType.SELL) {
+                    holdBunnyRepository.deleteIfEmpty(counter.getUser().getId(), bunny.getId());
+                }
             }
 
             // touched 가격 기록 (상대편 가격)
@@ -109,6 +109,9 @@ public class MatchingEngine {
         // myOrder 잔량 처리
         if (remainingQty.signum() == 0) {
             orderRepository.delete(myOrder);     // 완전 체결 → 삭제
+            if (myOrder.getOrderType() == OrderType.SELL) {
+                holdBunnyRepository.deleteIfEmpty(myOrder.getUser().getId(), bunny.getId());
+            }
         } else {
             myOrder.updateQuantity(remainingQty); // 부분 체결 → 잔량 저장
         }

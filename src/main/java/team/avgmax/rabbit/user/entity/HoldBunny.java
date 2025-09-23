@@ -33,7 +33,6 @@ public class HoldBunny extends BaseTime {
     @Column(precision = 30)
     private BigDecimal holdQuantity;
 
-    @Column(name = "total_buy_amount") //임시
     private BigDecimal costBasis;
 
     public static HoldBunny create(Bunny bunny, Funding funding) {
