@@ -3,6 +3,7 @@ package team.avgmax.rabbit.bunny.service.match;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import team.avgmax.rabbit.bunny.entity.Bunny;
 import team.avgmax.rabbit.bunny.entity.Match;
@@ -30,7 +31,7 @@ public class MatchingEngine {
     private final HoldBunnyRepository holdBunnyRepository;
     private final PersonalUserRepository personalUserRepository;
 
-    @Transactional
+    @Transactional(propagation = Propagation.MANDATORY)
     public MatchingResult match(Bunny bunny, Order myOrder, List<Order> candidates) {
         final Set<BigDecimal> touchedBid = new HashSet<>();
         final Set<BigDecimal> touchedAsk = new HashSet<>();
@@ -71,7 +72,7 @@ public class MatchingEngine {
             personalUserRepository.findByIdForUpdate(seller.getId());
 
             // 매도자 수입 (원금 - 수수료)
-            BigDecimal sellerIncome = tradeBaseAmt.subtract(sellerFee);
+            BigDecimal sellerIncome = MoneyCalc.sellerIncome(tradeBaseAmt);
             personalUserRepository.addCarrotForUpdate(seller.getId(), sellerIncome);
 
             // 매수자 예약금-실지출 차액 환불
@@ -85,7 +86,8 @@ public class MatchingEngine {
             }
 
             // 보유 변동
-            holdBunnyRepository.addHoldForUpdate(buyer.getId(),  bunny.getId(), tradable);
+            holdBunnyRepository.upsertForTrade(buyer.getId(), bunny.getId(), tradable, tradeBaseAmt, true);
+            holdBunnyRepository.upsertForTrade(seller.getId(), bunny.getId(), tradable.negate(), BigDecimal.ZERO, true);
 
             // 주문 잔량 갱신
             remainingQty = remainingQty.subtract(tradable);

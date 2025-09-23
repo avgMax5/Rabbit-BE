@@ -29,9 +29,7 @@ public final class MoneyCalc {
     }
 
     // (매수 체결 시) 내 지정가 > 체결가일 때 환불해야 할 금액(원금+수수료)
-    public static BigDecimal buyerRefundForPriceImprovement(BigDecimal myLimitPrice,
-                                                            BigDecimal tradePrice,
-                                                            BigDecimal filledQty) {
+    public static BigDecimal buyerRefundForPriceImprovement(BigDecimal filledQty, BigDecimal tradePrice, BigDecimal myLimitPrice) {
         // 환불 기준 원금 = (내지정가 - 체결가) * 체결수량
         BigDecimal diff = myLimitPrice.subtract(tradePrice);
         if (diff.signum() <= 0 || filledQty.signum() <= 0) return FeePolicy.normalize(BigDecimal.ZERO);
@@ -55,23 +53,5 @@ public final class MoneyCalc {
     // 매도자 실수령
     public static BigDecimal sellerIncome(BigDecimal tradeAmount) {
         return FeePolicy.normalize(tradeAmount.subtract(feeOn(tradeAmount)));
-    }
-
-    public static record Trade(
-            BigDecimal tradeAmount,       // 체결 시 원금
-            BigDecimal buyerFee,          // 매수자 수수료
-            BigDecimal sellerFee,         // 매도자 수수료
-            BigDecimal sellerIncome,      // 매도자 실수령액 (tradeAmount - sellerFee)
-            BigDecimal buyerRefundTotal   // (지정가 > 체결가) 원금 + 수수료 환불
-    ) {}
-
-    public static Trade settleOne(BigDecimal filledQty, BigDecimal tradePrice, BigDecimal buyerLimitPrice) {
-        BigDecimal tradeAmount = baseAmount(filledQty, tradePrice);
-        BigDecimal buyerFee = feeOn(tradeAmount);
-        BigDecimal sellerFee = feeOn(tradeAmount);
-        BigDecimal income = sellerIncome(tradeAmount);
-        BigDecimal refund = buyerRefundForPriceImprovement(filledQty, tradePrice, buyerLimitPrice);
-
-        return new Trade(tradeAmount, buyerFee, sellerFee, income, refund);
     }
 }

@@ -28,24 +28,6 @@ public class MatchRepositoryCustomImpl implements MatchRepositoryCustom{
     }
 
     @Override
-    public BigDecimal sumFilledByUserSideAndPrice(String bunnyId, String userId, OrderType side, BigDecimal price) {
-        QMatch match = QMatch.match;
-        BooleanExpression userSideExpr =
-                (side == OrderType.BUY) ? match.buyUser.id.eq(userId) : match.sellUser.id.eq(userId);
-
-        BigDecimal sum = queryFactory.select(match.quantity.sum())
-                .from(match)
-                .where(
-                        match.bunny.id.eq(bunnyId),
-                        match.unitPrice.eq(price),
-                        userSideExpr
-                )
-                .fetchOne();
-
-        return sum != null ? sum : BigDecimal.ZERO;
-    }
-
-    @Override
     public BigDecimal findLastTradePriceByBunnyId(String bunnyId) {
         QMatch m = QMatch.match;
 

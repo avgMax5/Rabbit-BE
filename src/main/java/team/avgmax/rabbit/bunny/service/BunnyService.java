@@ -236,7 +236,6 @@ public class BunnyService {
         if (request.orderType() == OrderType.SELL) {
             holdBunnyRepository.findByHolderAndBunnyForUpdate(user, bunny);
         }
-
         switch (request.orderType()) {
             case BUY -> validateBuy(request, user);
             case SELL -> validateSell(bunny, request, user);
@@ -301,7 +300,7 @@ public class BunnyService {
             throw new BunnyException(BunnyError.FORBIDDEN);
         }
 
-        // 이미 0이면 취소 불가
+        // 이미 체결 완료라면 취소 불가
         if (order.getQuantity().signum() == 0) {
             throw new BunnyException(BunnyError.ORDER_ALREADY_FILLED);
         }
@@ -312,7 +311,7 @@ public class BunnyService {
             personalUserRepository.addCarrotForUpdate(order.getUser().getId(), refund);
         }
 
-        // 매도자 취소시 남은 잔여 수량 복원
+        // 매도자 취소시 남은 잔여 예약 수량 복원
         if (order.getOrderType() == OrderType.SELL) {
             holdBunnyRepository.addHoldForUpdate(order.getUser().getId(), bunny.getId(), order.getQuantity());
         }
@@ -551,19 +550,6 @@ public class BunnyService {
         if (holding.compareTo(request.quantity()) < 0) throw new BunnyException(BunnyError.INSUFFICIENT_HOLDING);
     }
 
-    private BigDecimal reservedSellQuantity(String userId, String bunnyId) {
-        List<Order> orders = orderRepository
-                .findAllByUserAndBunnyAndSideOrderByCreatedAtAsc(userId, bunnyId, OrderType.SELL);
-
-        BigDecimal total = BigDecimal.ZERO;
-        for (Order order : orders) {
-            if (order.getQuantity().signum() > 0) {
-                total = total.add(order.getQuantity());
-            }
-        }
-        return total;
-    }
-
     private List<OrderBookAssembler.OrderLeaf> toLeaves(List<Order> orders) {
         List<OrderBookAssembler.OrderLeaf> out = new ArrayList<>(orders.size());
         for (Order order : orders) {
@@ -664,5 +650,4 @@ public class BunnyService {
             orderBookPublisher.publishDiff(bunnyName, diff);
         }
     }
-
 }

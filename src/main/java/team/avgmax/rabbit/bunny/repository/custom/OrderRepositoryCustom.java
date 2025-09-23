@@ -8,8 +8,6 @@ import java.util.List;
 import java.util.Set;
 
 public interface OrderRepositoryCustom {
-    List<Order> findAllByUserAndBunnyAndSideOrderByCreatedAtAsc(String userId, String bunnyId, OrderType side);
-
     Order findByIdAndBunnyIdForUpdate(String orderId, String bunnyId);
 
     List<Order> findAllByBunnyAndSideForOrderBook(String bunnyId, OrderType side);

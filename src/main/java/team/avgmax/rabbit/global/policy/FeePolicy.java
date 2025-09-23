@@ -23,12 +23,6 @@ public final class FeePolicy {
         return tradeAmount.multiply(FEE_RATE).setScale(SCALE, ROUNDING);
     }
 
-    // 매수/매도 양쪽 동일 수수료 반환
-    public static FeePair calcBothSide(BigDecimal tradeAmount) {
-        BigDecimal fee = calcFee(tradeAmount);
-        return new FeePair(fee, fee);
-    }
-
     // 최종 금액 정규화 (scale/rounding 일치)
     public static BigDecimal normalize(BigDecimal amount) {
         if (amount == null) return BigDecimal.ZERO.setScale(SCALE, ROUNDING);
