@@ -13,6 +13,7 @@ import team.avgmax.rabbit.bunny.exception.BunnyError;
 import team.avgmax.rabbit.bunny.dto.response.MatchListResponse;
 import team.avgmax.rabbit.bunny.dto.response.MatchResponse;
 import team.avgmax.rabbit.bunny.dto.response.OrderListResponse;
+import team.avgmax.rabbit.bunny.dto.response.OrderResponse;
 import team.avgmax.rabbit.user.dto.request.UpdatePersonalUserRequest;
 import team.avgmax.rabbit.user.dto.response.CarrotsResponse;
 import team.avgmax.rabbit.user.dto.response.FetchUserResponse;
@@ -27,6 +28,7 @@ import team.avgmax.rabbit.user.entity.UserProvider;
 import team.avgmax.rabbit.user.entity.enums.ProviderType;
 import team.avgmax.rabbit.bunny.entity.Bunny;
 import team.avgmax.rabbit.bunny.entity.Match;
+import team.avgmax.rabbit.bunny.entity.Order;
 import team.avgmax.rabbit.bunny.repository.BunnyRepository;
 import team.avgmax.rabbit.bunny.repository.OrderRepository;
 import team.avgmax.rabbit.user.entity.HoldBunny;
@@ -130,7 +132,12 @@ public class PersonalUserService {
 
     @Transactional(readOnly = true)
     public OrderListResponse getOrdersById(String personalUserId) {
-        return orderRepository.findOrdersByUserId(personalUserId);
+        List<Order> orders = orderRepository.findOrdersByUserId(personalUserId);
+        List<OrderResponse> orderResponses = orders.stream()
+            .map(order -> OrderResponse.from(order))
+            .toList();
+
+        return OrderListResponse.from(orderResponses);
     }
 
     @Transactional(readOnly = true)

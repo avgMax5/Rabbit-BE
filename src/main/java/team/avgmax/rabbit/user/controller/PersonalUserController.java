@@ -84,7 +84,7 @@ public class PersonalUserController implements PersonalUserApiDocs {
     @GetMapping("/me/orders")
     public ResponseEntity<OrderListResponse> getMyOrders(@AuthenticationPrincipal Jwt jwt) {
         String personalUserId = jwt.getSubject();
-        log.info("미체결 주문 목록 조회: user-{}", personalUserId);  
+        log.info("내 주문 목록 조회: user-{}", personalUserId);  
 
         return ResponseEntity.ok(personalUserService.getOrdersById(personalUserId));
     }
@@ -92,7 +92,7 @@ public class PersonalUserController implements PersonalUserApiDocs {
     @GetMapping("/me/matches")
     public ResponseEntity<MatchListResponse> getMyMatches(@AuthenticationPrincipal Jwt jwt) {
         String personalUserId = jwt.getSubject();
-        log.info("체결 주문 목록 조회: user-{}", personalUserId);  
+        log.info("내 체결 조회: user-{}", personalUserId);  
 
         return ResponseEntity.ok(personalUserService.getMatchesById(personalUserId));
     }

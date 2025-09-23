@@ -403,13 +403,13 @@ public interface PersonalUserApiDocs {
     );
 
     @Operation(
-        summary = "미체결 주문 목록 조회",
-        description = "현재 로그인한 사용자의 미체결 주문 내역을 조회합니다."
+        summary = "내 주문 목록 조회",
+        description = "현재 로그인한 사용자의 주문 내역을 조회합니다."
     )
     @ApiResponses(value = {
         @ApiResponse(
             responseCode = "200",
-            description = "미체결 주문 목록 조회 성공",
+            description = "내 주문 목록 조회 성공",
             content = @Content(
                 mediaType = "application/json",
                 schema = @Schema(implementation = OrderListResponse.class),

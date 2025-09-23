@@ -24,7 +24,7 @@ public record OrderResponse(
     BigDecimal totalAmount,  // 수수료 전 총 주문 금액
     BigDecimal fee,          // 예상 수수료
     BigDecimal finalAmount, // 수수료 적용 후 금액
-    LocalDateTime createdAt
+    LocalDateTime orderedAt
 ) {
     public static OrderResponse from(Order order) {
         BigDecimal total = order.getQuantity().multiply(order.getUnitPrice());
@@ -42,7 +42,7 @@ public record OrderResponse(
                 .totalAmount(total)
                 .fee(fee)
                 .finalAmount(finalAmount)
-                .createdAt(LocalDateTime.now())
+                .orderedAt(LocalDateTime.now())
                 .build();
     }
 }
