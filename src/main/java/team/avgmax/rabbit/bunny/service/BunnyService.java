@@ -23,6 +23,7 @@ import team.avgmax.rabbit.bunny.dto.response.FetchBunnyResponse;
 import team.avgmax.rabbit.bunny.dto.response.MyBunnyResponse;
 import team.avgmax.rabbit.bunny.dto.response.OrderListResponse;
 import team.avgmax.rabbit.bunny.dto.response.OrderResponse;
+import team.avgmax.rabbit.bunny.dto.response.RabbitIndexResponse;
 import team.avgmax.rabbit.bunny.entity.*;
 import team.avgmax.rabbit.bunny.entity.enums.BunnyFilter;
 import team.avgmax.rabbit.bunny.entity.enums.BunnyType;
@@ -74,6 +75,27 @@ public class BunnyService {
     private final OrderBookPublisher orderBookPublisher;
     private final BunnyIndicatorService bunnyIndicatorService;
     private final MatchingEngine matchingEngine;
+
+    // RABBIT 지수 조회
+    @Transactional(readOnly = true)
+    public RabbitIndexResponse getRabbitIndex() {
+        BigDecimal baseMarketCapSum = BigDecimal.valueOf(bunnyRepository.count()).multiply(BigDecimal.valueOf(100_000_000));
+        BigDecimal currentMarketCapSum = bunnyRepository.sumCurrentMarketCap();
+        
+        double rabbitIndex;
+        if (baseMarketCapSum.compareTo(BigDecimal.ZERO) == 0) {
+            rabbitIndex = 100.0;
+        } else {
+            rabbitIndex = currentMarketCapSum
+                    .divide(baseMarketCapSum, 4, RoundingMode.HALF_UP)
+                    .multiply(BigDecimal.valueOf(100))
+                    .doubleValue();
+        }
+        
+        return RabbitIndexResponse.builder()
+                .rabbitIndex(rabbitIndex)
+                .build();
+    }
 
     // 버니 목록 조회
     @Transactional(readOnly = true) // 읽기 전용

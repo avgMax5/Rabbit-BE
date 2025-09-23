@@ -1,6 +1,5 @@
 package team.avgmax.rabbit.bunny.repository.custom;
 
-import team.avgmax.rabbit.bunny.dto.response.OrderListResponse;
 import team.avgmax.rabbit.bunny.entity.Order;
 import team.avgmax.rabbit.bunny.entity.enums.OrderType;
 
@@ -9,8 +8,6 @@ import java.util.List;
 import java.util.Set;
 
 public interface OrderRepositoryCustom {
-    OrderListResponse findOrdersByUserId(String personalUserId);
-
     Order findByIdAndBunnyIdForUpdate(String orderId, String bunnyId);
 
     List<Order> findAllByBunnyAndSideForOrderBook(String bunnyId, OrderType side);

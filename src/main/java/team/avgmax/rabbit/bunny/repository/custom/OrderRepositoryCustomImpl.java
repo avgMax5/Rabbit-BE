@@ -8,13 +8,10 @@ import com.querydsl.jpa.impl.JPAQuery;
 import jakarta.persistence.LockModeType;
 import org.springframework.stereotype.Repository;
 
-import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
 import lombok.RequiredArgsConstructor;
 
-import team.avgmax.rabbit.bunny.dto.response.OrderListResponse;
-import team.avgmax.rabbit.bunny.dto.response.OrderResponse;
 import team.avgmax.rabbit.bunny.entity.Order;
 import team.avgmax.rabbit.bunny.entity.QOrder;
 import team.avgmax.rabbit.bunny.entity.enums.OrderType;
@@ -23,27 +20,6 @@ import team.avgmax.rabbit.bunny.entity.enums.OrderType;
 @RequiredArgsConstructor
 public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
     private final JPAQueryFactory queryFactory;
-
-    @Override
-    public OrderListResponse findOrdersByUserId(String personalUserId) {
-        QOrder order = QOrder.order;
-
-        List<OrderResponse> orders = queryFactory
-                .select(Projections.constructor(OrderResponse.class,
-                        order.id,
-                        order.bunny.bunnyName,
-                        order.bunny.id,
-                        order.quantity,
-                        order.unitPrice,
-                        order.orderType.stringValue()))
-                .from(order)
-                .where(order.user.id.eq(personalUserId))
-                .fetch();
-
-        return OrderListResponse.builder()
-                .orders(orders)
-                .build();
-    }
 
     @Override
     public Order findByIdAndBunnyIdForUpdate(String orderId, String bunnyId) {

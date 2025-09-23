@@ -64,6 +64,17 @@ public class BunnyRepositoryCustomImpl implements BunnyRepositoryCustom{
                 .fetch();
     }
 
+    @Override
+    public BigDecimal sumCurrentMarketCap() {
+        BigDecimal sum = queryFactory
+                .select(bunny.marketCap.sum())
+                .from(bunny)
+                .where(bunny.marketCap.isNotNull())
+                .fetchOne();
+        
+        return sum != null ? sum : BigDecimal.ZERO;
+    }
+
     private BigDecimal calculateAverageGrowthRate(com.querydsl.core.types.dsl.BooleanExpression condition) {
         NumberExpression<BigDecimal> growthRate = bunny.currentPrice.subtract(bunny.closingPrice)
                 .divide(bunny.closingPrice)

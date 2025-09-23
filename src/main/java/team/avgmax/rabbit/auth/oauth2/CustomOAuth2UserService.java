@@ -45,13 +45,16 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         } else if ("github".equals(registrationId)) {
             email = (String) attributes.get("email");
             name = (String) attributes.get("name");
+            if (email == null || email.isEmpty() || email.equals("")) {
+                email = (String) attributes.get("login") + "@github.com"; // GitHub 이메일이 없을 경우 대체 이메일 생성
+            }
             providerId = String.valueOf(attributes.get("id"));
 
         } else if ("kakao".equals(registrationId)) {
             Map<String, Object> kakaoAccount = getMapAttribute(attributes, "kakao_account");
             Map<String, Object> profile = getMapAttribute(kakaoAccount, "profile");
 
-            email = registrationId + "_" + attributes.get("id") + "@avgmax.team";
+            email = registrationId + attributes.get("id") + "@avgmax.team";
             name = profile.get("nickname").toString();
 
             providerId = String.valueOf(attributes.get("id"));
