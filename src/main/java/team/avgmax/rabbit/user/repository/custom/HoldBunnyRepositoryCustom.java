@@ -14,5 +14,7 @@ public interface HoldBunnyRepositoryCustom {
 
     List<Tuple> findHolderTypeDistributionByBunnyId(String bunnyId);
 
+    void upsertForTrade(String userId, String bunnyId, BigDecimal qtyDelta, BigDecimal tradeBaseAmount, boolean adjustCost);
+
     void addHoldForUpdate(String userId, String bunnyId, BigDecimal deltaQty);
 }

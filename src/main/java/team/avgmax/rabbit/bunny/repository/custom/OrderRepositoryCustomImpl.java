@@ -46,19 +46,6 @@ public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
     }
 
     @Override
-    public List<Order> findAllByUserAndBunnyAndSideOrderByCreatedAtAsc(String userId, String bunnyId, OrderType side) {
-        QOrder order = QOrder.order;
-        return queryFactory.selectFrom(order)
-                .where(
-                        order.user.id.eq(userId),
-                        order.bunny.id.eq(bunnyId),
-                        order.orderType.eq(side)
-                )
-                .orderBy(order.createdAt.asc())
-                .fetch();
-    }
-
-    @Override
     public Order findByIdAndBunnyIdForUpdate(String orderId, String bunnyId) {
         QOrder order = QOrder.order;
 
@@ -140,5 +127,4 @@ public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
                 .setLockMode(LockModeType.PESSIMISTIC_WRITE)
                 .fetch();
     }
-
 }

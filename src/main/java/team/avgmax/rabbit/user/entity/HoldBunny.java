@@ -33,14 +33,15 @@ public class HoldBunny extends BaseTime {
     @Column(precision = 30)
     private BigDecimal holdQuantity;
 
-    private BigDecimal totalBuyAmount;
+    @Column(name = "total_buy_amount") //임시
+    private BigDecimal costBasis;
 
     public static HoldBunny create(Bunny bunny, Funding funding) {
         return HoldBunny.builder()
                 .bunny(bunny)
                 .holder(funding.getUser())
                 .holdQuantity(funding.getQuantity())
-                .totalBuyAmount(bunny.getCurrentPrice().multiply(funding.getQuantity()))
+                .costBasis(bunny.getCurrentPrice().multiply(funding.getQuantity()))
                 .build();
     }
 }

@@ -8,7 +8,6 @@ import java.util.List;
 
 public interface MatchRepositoryCustom {
     List<Match> findMatchesByUserId(String userId);
-    BigDecimal sumFilledByUserSideAndPrice(String bunnyId, String userId, OrderType side, BigDecimal price);
 
     BigDecimal findLastTradePriceByBunnyId(String bunnyId);
 }
