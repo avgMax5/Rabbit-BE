@@ -4,6 +4,7 @@ import com.querydsl.core.types.dsl.*;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Repository;
 import team.avgmax.rabbit.bunny.dto.response.ChartDataPoint;
 import team.avgmax.rabbit.bunny.entity.BunnyHistory;
 import team.avgmax.rabbit.bunny.entity.QBunnyHistory;
@@ -17,6 +18,7 @@ import java.util.List;
 import static com.querydsl.core.types.Projections.constructor;
 import static team.avgmax.rabbit.bunny.entity.QBunnyHistory.bunnyHistory;
 
+@Repository
 @RequiredArgsConstructor
 public class BunnyHistoryRepositoryCustomImpl implements BunnyHistoryRepositoryCustom {
 

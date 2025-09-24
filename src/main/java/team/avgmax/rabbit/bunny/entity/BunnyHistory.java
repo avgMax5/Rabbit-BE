@@ -31,11 +31,11 @@ public class BunnyHistory extends BaseTime {
 
     private BigDecimal lowPrice;
 
-    private BigDecimal buyQuantity;
+    private BigDecimal buyQuantity;    // tradeQuantity + 자정 시점 BUY 오픈 잔량
 
-    private BigDecimal sellQuantity;
+    private BigDecimal sellQuantity;   // tradeQuantity + 자정 시점 SELL 오픈 잔량
 
-    private BigDecimal tradeQuantity;
+    private BigDecimal tradeQuantity;  // Match 의 quantity
 
     private BigDecimal marketCap;
 }

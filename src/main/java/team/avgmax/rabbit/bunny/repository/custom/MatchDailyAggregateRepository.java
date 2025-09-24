@@ -27,56 +27,62 @@ public class MatchDailyAggregateRepository {
     ) {}
 
     public List<Row> aggregateByBunny(LocalDateTime from, LocalDateTime to) {
-        QMatch m     = QMatch.match;
-        QMatch mMax  = new QMatch("mMax");  // max(createdAt) 계산용
-        QMatch mTie  = new QMatch("mTie");  // 동일시각에서 max(id) 계산용
-        QMatch mLast = new QMatch("mLast"); // 최종 unitPrice 조회용
+        QMatch match = QMatch.match;
+        QMatch matchMaxTime = new QMatch("matchMaxTime");
+        QMatch tieBreaker = new QMatch("tieBreaker");
+        QMatch lastMatch = new QMatch("lastMatch");
 
-        var inWindow = m.createdAt.goe(from).and(m.createdAt.lt(to));
+        // 기간 필터
+        var inWindow = match.createdAt.goe(from).and(match.createdAt.lt(to));
 
-        // 서브쿼리 1: 해당 bunny의 구간 내 "가장 늦은 createdAt"
-        var maxCreatedAtSub =
-                JPAExpressions.select(mMax.createdAt.max())
-                        .from(mMax)
-                        .where(
-                                mMax.bunny.id.eq(m.bunny.id),
-                                mMax.createdAt.goe(from),
-                                mMax.createdAt.lt(to)
-                        );
+        // bunny 구간 내 가장 늦은 "createdAt"
+        var maxCreatedAtQuery = JPAExpressions
+                .select(matchMaxTime.createdAt.max())
+                .from(matchMaxTime)
+                .where(
+                        matchMaxTime.bunny.id.eq(match.bunny.id),
+                        matchMaxTime.createdAt.goe(from),
+                        matchMaxTime.createdAt.lt(to)
+                );
 
-        // 서브쿼리 2: max(createdAt) 시각에 해당하는 행들 중 "id 최대값" (tie-break)
-        var maxIdAtMaxCreatedSub =
-                JPAExpressions.select(mTie.id.max())
-                        .from(mTie)
-                        .where(
-                                mTie.bunny.id.eq(m.bunny.id),
-                                mTie.createdAt.eq(maxCreatedAtSub),
-                                mTie.createdAt.goe(from),
-                                mTie.createdAt.lt(to)
-                        );
+        // maxCreatedAtQuery 의 createdAt 에서 "가장 큰 id"
+        var idMaxAtMaxCreatedQuery = JPAExpressions
+                .select(tieBreaker.id.max())
+                .from(tieBreaker)
+                .where(
+                        tieBreaker.bunny.id.eq(match.bunny.id),
+                        tieBreaker.createdAt.eq(maxCreatedAtQuery),
+                        tieBreaker.createdAt.goe(from),
+                        tieBreaker.createdAt.lt(to)
+                );
 
+        // 모든 버니 집계(aggregation), COALESCE 로 Null 방지
         return queryFactory
-                .select(Projections.constructor(Row.class,
-                        // 1) bunnyId
-                        m.bunny.id,
-                        // 2) highPrice: MAX(unitPrice) with COALESCE
-                        Expressions.numberTemplate(BigDecimal.class, "COALESCE(MAX({0}), 0)", m.unitPrice),
-                        // 3) lowPrice : MIN(unitPrice) with COALESCE
-                        Expressions.numberTemplate(BigDecimal.class, "COALESCE(MIN({0}), 0)", m.unitPrice),
-                        // 4) tradeQty : SUM(quantity) with COALESCE
-                        Expressions.numberTemplate(BigDecimal.class, "COALESCE(SUM({0}), 0)", m.quantity),
-                        // 5) closingPrice: 구간 마지막 체결가 (max(createdAt) & tie-break max(id))
-                        JPAExpressions.select(mLast.unitPrice)
-                                .from(mLast)
-                                .where(
-                                        mLast.bunny.id.eq(m.bunny.id),
-                                        mLast.createdAt.eq(maxCreatedAtSub),
-                                        mLast.id.eq(maxIdAtMaxCreatedSub)
-                                )
-                ))
-                .from(m)
+                .select(
+                        Projections.constructor(
+                                Row.class,
+                                // bunny 식별자
+                                match.bunny.id,
+                                // 고가
+                                Expressions.numberTemplate(BigDecimal.class, "COALESCE(MAX({0}), 0)", match.unitPrice),
+                                // 저가
+                                Expressions.numberTemplate(BigDecimal.class, "COALESCE(MIN({0}), 0)", match.unitPrice),
+                                // 총 거래량(체결량)
+                                Expressions.numberTemplate(BigDecimal.class, "COALESCE(SUM({0}), 0)", match.quantity),
+                                // 종가
+                                JPAExpressions
+                                        .select(lastMatch.unitPrice)
+                                        .from(lastMatch)
+                                        .where(
+                                                lastMatch.bunny.id.eq(match.bunny.id),
+                                                lastMatch.createdAt.eq(maxCreatedAtQuery),
+                                                lastMatch.id.eq(idMaxAtMaxCreatedQuery)
+                                        )
+                        )
+                )
+                .from(match)
                 .where(inWindow)
-                .groupBy(m.bunny.id)
+                .groupBy(match.bunny.id)
                 .fetch();
     }
 }
