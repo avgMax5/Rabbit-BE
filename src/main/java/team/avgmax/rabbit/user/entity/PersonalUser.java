@@ -43,8 +43,10 @@ public class PersonalUser extends User {
 
     private String portfolio;
 
+    @Builder.Default
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private Position position;
+    private Position position = Position.FRONTEND;
 
     @Builder.Default
     @Column(precision = 20)
