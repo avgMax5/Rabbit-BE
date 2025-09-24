@@ -94,7 +94,6 @@ public class BunnyService {
                     .divide(baseMarketCapSum, 4, RoundingMode.HALF_UP)
                     .multiply(BigDecimal.valueOf(100))
                     .doubleValue();
-            // rabbitIndex = Math.min(rabbitIndex, 100.0); // 100을 초과하지 않도록 제한
         }
         
         return RabbitIndexResponse.builder()
