@@ -19,6 +19,7 @@ import team.avgmax.rabbit.bunny.entity.enums.OrderType;
 @Repository
 @RequiredArgsConstructor
 public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
+
     private final JPAQueryFactory queryFactory;
 
     @Override
