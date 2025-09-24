@@ -15,6 +15,7 @@ import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
 import lombok.RequiredArgsConstructor;
+
 import team.avgmax.rabbit.bunny.dto.data.MyBunnyByHolderData;
 import team.avgmax.rabbit.bunny.entity.QBunny;
 import team.avgmax.rabbit.bunny.entity.QOrder;
@@ -22,8 +23,6 @@ import team.avgmax.rabbit.bunny.entity.enums.OrderType;
 import team.avgmax.rabbit.bunny.exception.BunnyError;
 import team.avgmax.rabbit.bunny.exception.BunnyException;
 import team.avgmax.rabbit.global.util.UlidGenerator;
-import team.avgmax.rabbit.user.dto.response.HoldBunniesResponse;
-import team.avgmax.rabbit.user.dto.response.HoldBunnyResponse;
 import team.avgmax.rabbit.user.entity.QHoldBunny;
 import team.avgmax.rabbit.user.entity.QPersonalUser;
 
@@ -31,26 +30,6 @@ import team.avgmax.rabbit.user.entity.QPersonalUser;
 @RequiredArgsConstructor
 public class HoldBunnyRepositoryCustomImpl implements HoldBunnyRepositoryCustom {
     private final JPAQueryFactory queryFactory;
-
-    @Override
-    public HoldBunniesResponse findHoldBunniesByUserId(String personalUserId) {
-        QHoldBunny holdBunny = QHoldBunny.holdBunny;
-
-        List<HoldBunnyResponse> holdBunnies = queryFactory
-                .select(Projections.constructor(HoldBunnyResponse.class,
-                        holdBunny.bunny.id,
-                        holdBunny.bunny.bunnyName,
-                        holdBunny.holdQuantity,
-                        holdBunny.costBasis
-                        ))
-                .from(holdBunny)
-                .where(holdBunny.holder.id.eq(personalUserId))
-                .fetch();
-
-        return HoldBunniesResponse.builder()
-                .holdBunnies(holdBunnies)
-                .build();
-    }
 
     @Override
     public List<MyBunnyByHolderData> findHoldersByBunnyId(String bunnyId) {

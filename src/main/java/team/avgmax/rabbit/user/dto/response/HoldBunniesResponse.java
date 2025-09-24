@@ -11,4 +11,10 @@ import lombok.Builder;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record HoldBunniesResponse(
     List<HoldBunnyResponse> holdBunnies
-) {}
+) {
+    public static HoldBunniesResponse from(List<HoldBunnyResponse> holdBunnies) {
+        return HoldBunniesResponse.builder()
+            .holdBunnies(holdBunnies)
+            .build();
+    }
+}

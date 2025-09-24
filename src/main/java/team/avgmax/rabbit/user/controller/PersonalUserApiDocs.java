@@ -324,16 +324,30 @@ public interface PersonalUserApiDocs {
                     {
                         "hold_bunnies": [
                             {
-                                "bunny_id": "01HZXBUNNY00000000000000001",
-                                "bunny_name": "bunny-001",
-                                "hold_quantity": 100,
-                                "total_buy_amount": 100000
+                                "bunnyId": "01HZXBUNNY00000000000000001",
+                                "bunnyName": "bunny-001",
+                                "holdQuantity": 100,
+                                "totalBuyAmount": 100000,
+                                "valuation": 120000,
+                                "avgPrice": 1000,
+                                "profitOrLoss": 20000,
+                                "returnRate": 20,
+                                "currentPrice": 1200,
+                                "priceDiffFromYesterday": 50,
+                                "priceChangeRate": 4.35
                             },
                             {
-                                "bunny_id": "01HZXBUNNY00000000000000002",
-                                "bunny_name": "bunny-002",
-                                "hold_quantity": 50,
-                                "total_buy_amount": 100000
+                                "bunnyId": "01HZXBUNNY00000000000000002",
+                                "bunnyName": "bunny-002",
+                                "holdQuantity": 50,
+                                "totalBuyAmount": 150000,
+                                "valuation": 140000,
+                                "avgPrice": 3000,
+                                "profitOrLoss": -10000,
+                                "returnRate": -6.67,
+                                "currentPrice": 2800,
+                                "priceDiffFromYesterday": -100,
+                                "priceChangeRate": -3.45
                             }
                         ]
                     }
