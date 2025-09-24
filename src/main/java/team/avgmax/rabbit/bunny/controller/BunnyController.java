@@ -13,6 +13,7 @@ import team.avgmax.rabbit.bunny.dto.orderBook.OrderBookSnapshot;
 import team.avgmax.rabbit.bunny.dto.request.OrderRequest;
 import team.avgmax.rabbit.bunny.dto.response.ChartResponse;
 import team.avgmax.rabbit.bunny.dto.response.FetchBunnyResponse;
+import team.avgmax.rabbit.bunny.dto.response.BunnyUserContextResponse;
 import team.avgmax.rabbit.bunny.dto.response.OrderListResponse;
 import team.avgmax.rabbit.bunny.dto.response.MyBunnyResponse;
 import team.avgmax.rabbit.bunny.entity.enums.BunnyFilter;
@@ -55,6 +56,15 @@ public class BunnyController implements BunnyApiDocs {
         log.info("GET 버니 상세 조회: {}",bunnyName);
 
         return ResponseEntity.ok(bunnyService.getBunnyByName(bunnyName));
+    }
+
+    // 버니 사용자 컨텍스트 조회
+    @GetMapping("/{bunnyName}/user-context")
+    public ResponseEntity<BunnyUserContextResponse> getBunnyUserContext(@AuthenticationPrincipal Jwt jwt, @PathVariable String bunnyName) {
+        String userId = jwt.getSubject();
+        log.info("GET 버니 사용자 컨텍스트 조회: {}, userId: {}", bunnyName, userId);
+
+        return ResponseEntity.ok(bunnyService.getBunnyUserContext(bunnyName, userId));
     }
 
     // 마이 버니 조회

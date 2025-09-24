@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record UserFundingSummary(
         PersonalUser user,
-        BigDecimal totalQuantity
+        BigDecimal totalQuantity,
+        String bunnyName
 ) {
 }
