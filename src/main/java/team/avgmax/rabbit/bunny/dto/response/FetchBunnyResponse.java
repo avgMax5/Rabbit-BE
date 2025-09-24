@@ -71,6 +71,7 @@ public class FetchBunnyResponse {
                 .currentPrice(bunny.getCurrentPrice())
                 .closingPrice(bunny.getClosingPrice())
                 .marketCap(bunny.getMarketCap())
+                .fluctuationRate(calculateFluctuationRate(bunny.getCurrentPrice(), bunny.getClosingPrice()))
                 .growth(bunny.getGrowth())
                 .stability(bunny.getStability())
                 .value(bunny.getValue())
@@ -82,6 +83,15 @@ public class FetchBunnyResponse {
                 .spec(SpecResponse.from(bunny.getUser()))
                 .createdAt(bunny.getCreatedAt())
                 .build();
+    }
+
+    private static BigDecimal calculateFluctuationRate(BigDecimal currentPrice, BigDecimal closingPrice) {
+        if (currentPrice == null || closingPrice == null || closingPrice.compareTo(BigDecimal.ZERO) == 0) {
+            return BigDecimal.ZERO;
+        }
+        return currentPrice.subtract(closingPrice)
+                .divide(closingPrice, 4, java.math.RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100));
     }
 
 }

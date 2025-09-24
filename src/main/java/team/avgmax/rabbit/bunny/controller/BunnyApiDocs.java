@@ -22,6 +22,11 @@ import team.avgmax.rabbit.bunny.dto.orderBook.OrderBookSnapshot;
 import team.avgmax.rabbit.bunny.dto.request.OrderRequest;
 import team.avgmax.rabbit.bunny.dto.response.*;
 
+import team.avgmax.rabbit.bunny.dto.response.FetchBunnyResponse;
+import team.avgmax.rabbit.bunny.dto.response.BunnyUserContextResponse;
+import team.avgmax.rabbit.bunny.dto.response.MyBunnyResponse;
+import team.avgmax.rabbit.bunny.dto.response.RabbitIndexResponse;
+
 
 @Tag(name = "Bunny", description = "버니 API")
 public interface BunnyApiDocs {
@@ -357,6 +362,37 @@ public interface BunnyApiDocs {
     })
     ResponseEntity<FetchBunnyResponse> getBunny(
         @Parameter(description = "버니 이름", example = "bunny-001", required = true)
+        String bunnyName
+    );
+
+    // ---------------- 버니 사용자 컨텍스트 조회 ----------------
+    @Operation(
+        summary = "버니 사용자 컨텍스트 조회", 
+        description = "특정 버니에 대한 사용자의 매수/매도 가능한 금액과 수량을 조회합니다."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "사용자 컨텍스트 조회 성공",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = BunnyUserContextResponse.class),
+                examples = @ExampleObject(
+                    value = """
+                    {
+                        "is_liked": true,
+                        "buyable_amount": 5000000,
+                        "sellable_quantity": 100
+                    }
+                    """
+                )
+            )
+        ),
+        @ApiResponse(responseCode = "404", description = "해당 버니를 찾을 수 없습니다.")
+    })
+    ResponseEntity<BunnyUserContextResponse> getBunnyUserContext(
+        @Parameter(description = "버니 이름", example = "bunny-001", required = true)
+        @AuthenticationPrincipal Jwt jwt,
         String bunnyName
     );
 

@@ -15,8 +15,11 @@ import team.avgmax.rabbit.funding.entity.FundBunny;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record HoldingStatusResponse(
         Double top1,
+        String top1Name,
         Double top2,
+        String top2Name,
         Double top3,
+        String top3Name,
         Double others,
         Double remaining
 ) {
@@ -27,8 +30,11 @@ public record HoldingStatusResponse(
         if (userFundingSummaries.isEmpty() || totalSupply.compareTo(BigDecimal.ZERO) == 0) {
             return HoldingStatusResponse.builder()
                     .top1(0.0)
+                    .top1Name("")
                     .top2(0.0)
+                    .top2Name("")
                     .top3(0.0)
+                    .top3Name("")
                     .others(0.0)
                     .remaining(100.0)
                     .build();
@@ -56,10 +62,17 @@ public record HoldingStatusResponse(
 
         return HoldingStatusResponse.builder()
                 .top1(top1)
+                .top1Name(getBunnyName(userFundingSummaries, 0))
                 .top2(top2)
+                .top2Name(getBunnyName(userFundingSummaries, 1))
                 .top3(top3)
+                .top3Name(getBunnyName(userFundingSummaries, 2))
                 .others(others)
                 .remaining(remaining)
                 .build();
+    }
+    
+    private static String getBunnyName(List<UserFundingSummary> summaries, int index) {
+        return summaries.size() > index ? summaries.get(index).bunnyName() : null;
     }
 }
