@@ -9,6 +9,7 @@ import team.avgmax.rabbit.funding.entity.FundBunny;
 import team.avgmax.rabbit.funding.entity.QFunding;
 import team.avgmax.rabbit.user.entity.PersonalUser;
 import team.avgmax.rabbit.user.entity.QPersonalUser;
+import team.avgmax.rabbit.bunny.entity.QBunny;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -23,17 +24,20 @@ public class FundingRepositoryCustomImpl implements FundingRepositoryCustom {
     public List<UserFundingSummary> findUserFundingSummariesByFundBunnyOrderByQuantityDesc(FundBunny fundBunny) {
         QFunding funding = QFunding.funding;
         QPersonalUser user = QPersonalUser.personalUser;
+        QBunny bunny = QBunny.bunny;
         
         return queryFactory
                 .select(Projections.constructor(
                         UserFundingSummary.class,
                         user,
-                        funding.quantity.sum()
+                        funding.quantity.sum(),
+                        bunny.bunnyName
                 ))
                 .from(funding)
                 .join(funding.user, user)
+                .leftJoin(bunny).on(bunny.user.eq(user))
                 .where(funding.fundBunny.eq(fundBunny))
-                .groupBy(user)
+                .groupBy(user, bunny.bunnyName)
                 .orderBy(funding.quantity.sum().desc())
                 .fetch();
     }

@@ -1,16 +1,11 @@
 package team.avgmax.rabbit.bunny.repository.custom;
 
-import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
-import team.avgmax.rabbit.bunny.dto.response.MatchListResponse;
-import team.avgmax.rabbit.bunny.dto.response.MatchResponse;
 import team.avgmax.rabbit.bunny.entity.Match;
 import team.avgmax.rabbit.bunny.entity.QMatch;
-import team.avgmax.rabbit.bunny.entity.enums.OrderType;
-
 import java.math.BigDecimal;
 import java.util.List;
 

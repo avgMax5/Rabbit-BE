@@ -173,4 +173,18 @@ public class HoldBunnyRepositoryCustomImpl implements HoldBunnyRepositoryCustom 
                 )
                 .execute();
     }
+
+    @Override
+    public BigDecimal findTotalQuantityByUserIdAndBunnyId(String userId, String bunnyId) {
+        QHoldBunny holdBunny = QHoldBunny.holdBunny;
+
+        BigDecimal result = queryFactory
+                .select(holdBunny.holdQuantity.sum())
+                .from(holdBunny)
+                .where(holdBunny.holder.id.eq(userId)
+                        .and(holdBunny.bunny.id.eq(bunnyId)))
+                .fetchOne();
+
+        return result != null ? result : BigDecimal.ZERO;
+    }
 }
