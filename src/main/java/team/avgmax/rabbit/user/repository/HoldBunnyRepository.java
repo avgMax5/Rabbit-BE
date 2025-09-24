@@ -14,8 +14,9 @@ import java.util.Optional;
 import java.util.List;
 
 public interface HoldBunnyRepository extends JpaRepository<HoldBunny, String>, HoldBunnyRepositoryCustom {
-
     List<HoldBunny> findByHolder(PersonalUser holder);
+
+    List<HoldBunny> findByHolderId(String personalUserId);
 
     Optional<HoldBunny> findByHolderAndBunny(PersonalUser holder, Bunny bunny);
 

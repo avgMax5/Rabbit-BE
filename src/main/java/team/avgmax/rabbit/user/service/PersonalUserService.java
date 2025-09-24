@@ -19,6 +19,7 @@ import team.avgmax.rabbit.user.dto.response.CarrotsResponse;
 import team.avgmax.rabbit.user.dto.response.FetchUserResponse;
 import team.avgmax.rabbit.user.dto.response.HoldBunniesResponse;
 import team.avgmax.rabbit.user.dto.response.HoldBunniesStatsResponse;
+import team.avgmax.rabbit.user.dto.response.HoldBunnyResponse;
 import team.avgmax.rabbit.user.dto.response.PersonalUserResponse;
 import team.avgmax.rabbit.user.entity.PersonalUser;
 import team.avgmax.rabbit.user.entity.enums.Role;
@@ -119,7 +120,11 @@ public class PersonalUserService {
 
     @Transactional(readOnly = true)
     public HoldBunniesResponse getBunniesById(String personalUserId) {
-        return holdBunnyRepository.findHoldBunniesByUserId(personalUserId);
+        List<HoldBunny> holdBunnies = holdBunnyRepository.findByHolderId(personalUserId);
+        List<HoldBunnyResponse> holdBunnyResponses = holdBunnies.stream()
+            .map(holdBunny -> HoldBunnyResponse.from(holdBunny))
+            .toList();
+        return HoldBunniesResponse.from(holdBunnyResponses);
     }
 
     @Transactional(readOnly = true)
