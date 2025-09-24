@@ -102,6 +102,14 @@ public class BunnyService {
                 .build();
     }
 
+    // 업데이트 알림 목록 조회
+    @Transactional(readOnly = true)
+    public List<String> getUpdateAlerts() {
+        return bunnyRepository.findTop10ByOrderBySpecUpdatedAtDesc().stream()
+                .map(Bunny::getBunnyName)
+                .toList();
+    }
+
     // 버니 목록 조회
     @Transactional(readOnly = true)
     public Page<FetchBunnyResponse> getBunniesByFilter(BunnyFilter filter, Pageable pageable) {

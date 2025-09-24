@@ -17,6 +17,9 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+
+import java.util.List;
+
 import team.avgmax.rabbit.bunny.entity.enums.ChartInterval;
 import team.avgmax.rabbit.bunny.dto.orderBook.OrderBookSnapshot;
 import team.avgmax.rabbit.bunny.dto.request.OrderRequest;
@@ -53,6 +56,32 @@ public interface BunnyApiDocs {
         )
     })
     ResponseEntity<RabbitIndexResponse> getRabbitIndex();
+
+    // ---------------- 업데이트 알림 목록 조회 ----------------
+    @Operation(
+        summary = "업데이트 알림 목록 조회",
+        description = "업데이트 알림 목록을 조회합니다."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "업데이트 알림 목록 조회 성공",
+            content = @Content(
+                mediaType = "application/json",
+                array = @ArraySchema(schema = @Schema(implementation = String.class)),
+                examples = @ExampleObject(
+                    value = """
+                    [
+                        "bunny-001",
+                        "bunny-002",
+                        "bunny-003"
+                    ]
+                    """
+                )
+            )
+        )
+    })
+    ResponseEntity<List<String>> getUpdateAlerts(); 
 
     // ---------------- 버니 목록 조회 ----------------
     @Operation(

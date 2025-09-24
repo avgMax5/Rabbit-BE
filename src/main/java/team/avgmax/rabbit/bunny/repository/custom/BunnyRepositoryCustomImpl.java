@@ -95,4 +95,12 @@ public class BunnyRepositoryCustomImpl implements BunnyRepositoryCustom{
         return (average != null) ? average.setScale(4, RoundingMode.HALF_UP) : BigDecimal.ZERO;
     }
 
+    @Override
+    public List<Bunny> findTop10ByOrderBySpecUpdatedAtDesc() {
+        return queryFactory
+                .selectFrom(bunny)
+                .orderBy(bunny.user.specUpdatedAt.desc())
+                .limit(10)
+                .fetch();
+    }
 }
