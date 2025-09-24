@@ -10,7 +10,7 @@ import java.util.Locale;
 @RequiredArgsConstructor
 public enum BunnyFilter {
 
-    LATEST("latest"), ALL("all"), CAPITALIZATION("capitalization");
+    LATEST("latest"), ALL("all"), CAPITALIZATION("capitalization"), DEFAULT("default");
 
     private final String value;
 
@@ -24,7 +24,7 @@ public enum BunnyFilter {
     }
 
     public static BunnyFilter fromValue(String raw) {
-        if (raw == null) return ALL;
+        if (raw == null) return DEFAULT;
 
         // 입력 표준화
         String key = normalize(raw);
