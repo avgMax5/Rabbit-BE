@@ -17,4 +17,6 @@ public interface HoldBunnyRepositoryCustom {
     void adjustReservation(String userId, String bunnyId, BigDecimal deltaQty);
 
     void deleteIfEmpty(String userId, String bunnyId);
+
+    BigDecimal findTotalQuantityByUserIdAndBunnyId(String userId, String bunnyId);
 }

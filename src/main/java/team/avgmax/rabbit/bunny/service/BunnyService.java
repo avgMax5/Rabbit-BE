@@ -2,6 +2,9 @@ package team.avgmax.rabbit.bunny.service;
 
 import com.querydsl.core.Tuple;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
@@ -20,6 +23,7 @@ import team.avgmax.rabbit.bunny.dto.request.OrderRequest;
 import team.avgmax.rabbit.bunny.dto.response.ChartDataPoint;
 import team.avgmax.rabbit.bunny.dto.response.ChartResponse;
 import team.avgmax.rabbit.bunny.dto.response.FetchBunnyResponse;
+import team.avgmax.rabbit.bunny.dto.response.BunnyUserContextResponse;
 import team.avgmax.rabbit.bunny.dto.response.MyBunnyResponse;
 import team.avgmax.rabbit.bunny.dto.response.OrderListResponse;
 import team.avgmax.rabbit.bunny.dto.response.OrderResponse;
@@ -90,6 +94,7 @@ public class BunnyService {
                     .divide(baseMarketCapSum, 4, RoundingMode.HALF_UP)
                     .multiply(BigDecimal.valueOf(100))
                     .doubleValue();
+            // rabbitIndex = Math.min(rabbitIndex, 100.0); // 100을 초과하지 않도록 제한
         }
         
         return RabbitIndexResponse.builder()
@@ -97,22 +102,29 @@ public class BunnyService {
                 .build();
     }
 
+    // 업데이트 알림 목록 조회
+    @Transactional(readOnly = true)
+    public List<String> getUpdateAlerts() {
+        return bunnyRepository.findTop10ByOrderBySpecUpdatedAtDesc().stream()
+                .map(Bunny::getBunnyName)
+                .toList();
+    }
+
     // 버니 목록 조회
-    @Transactional(readOnly = true) // 읽기 전용
-    public List<FetchBunnyResponse> getBunniesByFilter(BunnyFilter filter) {
-        List<Bunny> bunnies = switch (filter) {
-            case ALL -> bunnyRepository.findAllByPriorityGroupAndCreatedAt(); // 로켓 탑승한 버니들
-            case LATEST -> bunnyRepository.findAllByOrderByCreatedAtDesc(); // GOT 탑승한 버니들
-            case CAPITALIZATION -> bunnyRepository.findTop5ByOrderByMarketCapDesc(); // Top 5 버니들
+    @Transactional(readOnly = true)
+    public Page<FetchBunnyResponse> getBunniesByFilter(BunnyFilter filter, Pageable pageable) {
+        Page<Bunny> bunnies = switch (filter) {
+                case ALL -> bunnyRepository.findAll(Pageable.unpaged());
+                case LATEST -> bunnyRepository.findAllByOrderByCreatedAtDesc(pageable);
+                case CAPITALIZATION -> bunnyRepository.findAllByOrderByMarketCapDesc(pageable);
+                default -> bunnyRepository.findAll(pageable);
         };
 
         if (bunnies.isEmpty()) {
             log.debug("No bunnies found for filter={}", filter);
         }
 
-        return bunnies.stream()
-                .map(bunny -> FetchBunnyResponse.from(bunny))
-                .toList();
+        return bunnies.map(FetchBunnyResponse::from);
     }
 
     // 버니 상세 조회
@@ -120,10 +132,34 @@ public class BunnyService {
     public FetchBunnyResponse getBunnyByName(String bunnyName) {
         Bunny bunny = bunnyRepository.findByBunnyName(bunnyName)
                 .orElseThrow(() -> new BunnyException(BunnyError.BUNNY_NOT_FOUND));
-
         log.debug("Found bunny id={} name={}", bunny.getId(), bunny.getBunnyName());
 
         return FetchBunnyResponse.from(bunny);
+    }
+
+    // 버니 사용자 컨텍스트 조회 (매수/매도 가능한 금액과 수량)
+    @Transactional(readOnly = true)
+    public BunnyUserContextResponse getBunnyUserContext(String bunnyName, String userId) {
+        Bunny bunny = bunnyRepository.findByBunnyName(bunnyName)
+                .orElseThrow(() -> new BunnyException(BunnyError.BUNNY_NOT_FOUND));
+        
+        // 사용자 정보 조회
+        PersonalUser user = personalUserRepository.findById(userId)
+                .orElseThrow(() -> new UserException(UserError.USER_NOT_FOUND));
+
+        boolean isLiked = bunnyLikeRepository.existsByBunnyIdAndUserId(bunny.getId(), userId);
+
+        // 매도 가능한 수량 계산 (사용자가 보유한 해당 bunny의 quantity 합계)
+        BigDecimal sellableQuantity = holdBunnyRepository.findTotalQuantityByUserIdAndBunnyId(userId, bunny.getId());
+
+        // 매수 가능한 금액 계산
+        BigDecimal buyableAmount = calculateBuyableAmount(user, bunny);
+
+        return BunnyUserContextResponse.of(
+                isLiked,
+                buyableAmount,
+                sellableQuantity
+        );
     }
 
     // 마이 버니 조회
@@ -671,5 +707,33 @@ public class BunnyService {
             // 트랜잭션 바깥이면 그냥 즉시 전송
             orderBookPublisher.publishDiff(bunnyName, diff);
         }
+    }
+
+    private BigDecimal calculateBuyableAmount(PersonalUser user, Bunny bunny) {
+        // 사용자의 현재 캐럿 보유량
+        BigDecimal userCarrot = user.getCarrot();
+        
+        // bunny 타입별 총 공급량
+        BigDecimal totalSupply = bunny.getBunnyType().getTotalSupply();
+        
+        // 사용자가 최대 보유 가능한 수량 (총 공급량의 50%)
+        BigDecimal maxHoldableQuantity = totalSupply.multiply(BigDecimal.valueOf(0.5));
+        
+        // 사용자가 현재 보유한 수량
+        BigDecimal currentHoldQuantity = holdBunnyRepository.findTotalQuantityByUserIdAndBunnyId(user.getId(), bunny.getId());
+        
+        // 추가로 매수 가능한 수량
+        BigDecimal additionalBuyableQuantity = maxHoldableQuantity.subtract(currentHoldQuantity);
+        
+        // 추가 매수가 불가능한 경우 (이미 50% 이상 보유)
+        if (additionalBuyableQuantity.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+        
+        // 현재가 기준으로 추가 매수 가능한 금액
+        BigDecimal maxBuyableAmountByQuantity = bunny.getCurrentPrice().multiply(additionalBuyableQuantity);
+        
+        // 사용자 캐럿과 수량 제한 중 더 작은 값이 실제 매수 가능한 금액
+        return userCarrot.min(maxBuyableAmountByQuantity);
     }
 }

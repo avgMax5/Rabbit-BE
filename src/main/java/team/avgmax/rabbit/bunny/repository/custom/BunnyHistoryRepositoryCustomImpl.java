@@ -46,7 +46,8 @@ public class BunnyHistoryRepositoryCustomImpl implements BunnyHistoryRepositoryC
                 ))
                 .from(bunnyHistory)
                 .where(bunnyHistory.bunnyId.eq(bunnyId))
-                .orderBy(bunnyHistory.date.asc())
+                .orderBy(bunnyHistory.date.desc())
+                .limit(7)
                 .fetch();
     }
 
@@ -95,7 +96,8 @@ public class BunnyHistoryRepositoryCustomImpl implements BunnyHistoryRepositoryC
                 .from(bunnyHistory)
                 .where(bunnyHistory.bunnyId.eq(bunnyId))
                 .groupBy(weekKey)
-                .orderBy(weekKey.asc())
+                .orderBy(weekKey.desc())
+                .limit(7)
                 .fetch();
     }
 
@@ -145,7 +147,8 @@ public class BunnyHistoryRepositoryCustomImpl implements BunnyHistoryRepositoryC
                 .from(bunnyHistory)
                 .where(bunnyHistory.bunnyId.eq(bunnyId))
                 .groupBy(monthKey)
-                .orderBy(monthKey.asc())
+                .orderBy(monthKey.desc())
+                .limit(7)
                 .fetch();
     }
 
