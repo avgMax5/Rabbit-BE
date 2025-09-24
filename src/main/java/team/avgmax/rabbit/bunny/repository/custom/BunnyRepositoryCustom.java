@@ -23,4 +23,5 @@ public interface BunnyRepositoryCustom {
 
     BigDecimal sumCurrentMarketCap();
 
+    List<Bunny> findTop10ByOrderBySpecUpdatedAtDesc();
 }

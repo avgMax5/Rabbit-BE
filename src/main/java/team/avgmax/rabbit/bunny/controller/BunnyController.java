@@ -45,6 +45,13 @@ public class BunnyController implements BunnyApiDocs {
         return ResponseEntity.ok(bunnyService.getRabbitIndex());
     }
 
+    // 업데이트 알림 목록 조회
+    @GetMapping("/update-alerts")
+    public ResponseEntity<List<String>> getUpdateAlerts() {
+        log.info("GET 업데이트 알림 목록 조회");
+        return ResponseEntity.ok(bunnyService.getUpdateAlerts());
+    }
+
     // 버니 목록 조회
     @GetMapping
     public ResponseEntity<Page<FetchBunnyResponse>> getBunnyList(@RequestParam(required = false) String filter, @PageableDefault(size = 15, sort = {}) Pageable pageable) {
