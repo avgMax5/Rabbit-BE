@@ -2,6 +2,9 @@ package team.avgmax.rabbit.bunny.service;
 
 import com.querydsl.core.Tuple;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
@@ -91,6 +94,7 @@ public class BunnyService {
                     .divide(baseMarketCapSum, 4, RoundingMode.HALF_UP)
                     .multiply(BigDecimal.valueOf(100))
                     .doubleValue();
+            // rabbitIndex = Math.min(rabbitIndex, 100.0); // 100을 초과하지 않도록 제한
         }
         
         return RabbitIndexResponse.builder()
@@ -99,21 +103,20 @@ public class BunnyService {
     }
 
     // 버니 목록 조회
-    @Transactional(readOnly = true) // 읽기 전용
-    public List<FetchBunnyResponse> getBunniesByFilter(BunnyFilter filter) {
-        List<Bunny> bunnies = switch (filter) {
-            case ALL -> bunnyRepository.findAllByPriorityGroupAndCreatedAt(); // 로켓 탑승한 버니들
-            case LATEST -> bunnyRepository.findAllByOrderByCreatedAtDesc(); // GOT 탑승한 버니들
-            case CAPITALIZATION -> bunnyRepository.findTop5ByOrderByMarketCapDesc(); // Top 5 버니들
+    @Transactional(readOnly = true)
+    public Page<FetchBunnyResponse> getBunniesByFilter(BunnyFilter filter, Pageable pageable) {
+        Page<Bunny> bunnies = switch (filter) {
+                case ALL -> bunnyRepository.findAll(Pageable.unpaged());
+                case LATEST -> bunnyRepository.findAllByOrderByCreatedAtDesc(pageable);
+                case CAPITALIZATION -> bunnyRepository.findAllByOrderByMarketCapDesc(pageable);
+                default -> bunnyRepository.findAll(pageable);
         };
 
         if (bunnies.isEmpty()) {
             log.debug("No bunnies found for filter={}", filter);
         }
 
-        return bunnies.stream()
-                .map(bunny -> FetchBunnyResponse.from(bunny))
-                .toList();
+        return bunnies.map(FetchBunnyResponse::from);
     }
 
     // 버니 상세 조회

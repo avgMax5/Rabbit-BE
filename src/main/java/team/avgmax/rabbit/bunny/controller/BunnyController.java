@@ -2,6 +2,10 @@ package team.avgmax.rabbit.bunny.controller;
 
 import org.springframework.security.oauth2.jwt.Jwt;
 import jakarta.validation.Valid;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -43,11 +47,10 @@ public class BunnyController implements BunnyApiDocs {
 
     // 버니 목록 조회
     @GetMapping
-    public ResponseEntity<List<FetchBunnyResponse>> getBunnyList(@RequestParam(required = false) String filter) {
+    public ResponseEntity<Page<FetchBunnyResponse>> getBunnyList(@RequestParam(required = false) String filter, @PageableDefault(size = 15, sort = {}) Pageable pageable) {
         log.info("GET 버니 목록 조회");
-        BunnyFilter bunnyFilter = BunnyFilter.fromValue(filter); // IllegalAccessException 발생 시 GlobalException 에서 처리
-
-        return ResponseEntity.ok(bunnyService.getBunniesByFilter(bunnyFilter));
+        BunnyFilter bunnyFilter = BunnyFilter.fromValue(filter);
+        return ResponseEntity.ok(bunnyService.getBunniesByFilter(bunnyFilter, pageable));
     }
 
     // 버니 상세 조회

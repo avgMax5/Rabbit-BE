@@ -9,6 +9,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -16,12 +21,12 @@ import team.avgmax.rabbit.bunny.entity.enums.ChartInterval;
 import team.avgmax.rabbit.bunny.dto.orderBook.OrderBookSnapshot;
 import team.avgmax.rabbit.bunny.dto.request.OrderRequest;
 import team.avgmax.rabbit.bunny.dto.response.*;
+
 import team.avgmax.rabbit.bunny.dto.response.FetchBunnyResponse;
 import team.avgmax.rabbit.bunny.dto.response.BunnyUserContextResponse;
 import team.avgmax.rabbit.bunny.dto.response.MyBunnyResponse;
 import team.avgmax.rabbit.bunny.dto.response.RabbitIndexResponse;
 
-import java.util.List;
 
 @Tag(name = "Bunny", description = "버니 API")
 public interface BunnyApiDocs {
@@ -63,37 +68,258 @@ public interface BunnyApiDocs {
                 array = @ArraySchema(schema = @Schema(implementation = FetchBunnyResponse.class)),
                 examples = @ExampleObject(
                     value = """
-                    [
-                      {
-                        "bunny_id": "01HZXYBUNNY000000000000001",
-                        "user_name": "사용자_01",
-                        "bunny_name": "bunny-001",
-                        "developer_type": "GROWTH",
-                        "bunny_type": "A",
-                        "position": "BACKEND",
-                        "reliability": 87.55,
-                        "current_price": 120000,
-                        "closing_price": 110000,
-                        "market_cap": 35000000,
-                        "fluctuation_rate": 10.25,
-                        "growth": 50,
-                        "stability": 62,
-                        "value": 31,
-                        "popularity": 21,
-                        "balance": 24,
-                        "badges": ["NAVER", "SHINHAN"],
-                        "like_count": "1234",
-                        "created_at": "2025-09-15T14:30:00"
-                      }
-                    ]
+                    {
+                        "content": [
+                            {
+                            "bunny_id": "01BUNNY0010000000000000030",
+                            "user_name": "사용자30",
+                            "bunny_name": "bunny-030",
+                            "developer_type": "GROWTH",
+                            "bunny_type": "A",
+                            "position": "FULLSTACK",
+                            "reliability": 6,
+                            "current_price": 100727,
+                            "closing_price": 121584,
+                            "market_cap": 100727000,
+                            "fluctuation_rate": null,
+                            "growth": 66,
+                            "stability": 70,
+                            "value": 48,
+                            "popularity": 51,
+                            "balance": 86,
+                            "badges": [
+                                "KAKAO",
+                                "NAVER",
+                                "SHINHAN"
+                            ],
+                            "ai_review": "최신 트렌드와 프레임워크에 강해 시장의 주목을 받는 인기주 개발자",
+                            "like_count": 14,
+                            "spec": {
+                                "name": "사용자30",
+                                "birthdate": "1999-05-25",
+                                "email": "user030@google.com",
+                                "phone": "010-0000-0030",
+                                "image": "https://picsum.photos/200",
+                                "resume": "https://example.com/resume.pdf",
+                                "position": "FULLSTACK",
+                                "link": [
+                                {
+                                    "sns_id": "01RABBIT070000000000003001",
+                                    "url": "https://www.linkedin.com/user30",
+                                    "type": "LINKEDIN",
+                                    "favicon": "https://linkedin.com/favicon.ico"
+                                }
+                                ],
+                                "skill": [
+                                "Swift",
+                                "Node.js",
+                                "Javascript",
+                                "React",
+                                "PHP"
+                                ],
+                                "certification": [
+                                {
+                                    "certification_id": "01RABBIT040000000000003001",
+                                    "certificate_url": "https://example.com/certificate.pdf",
+                                    "name": "리눅스마스터",
+                                    "ca": "한국산업인력공단",
+                                    "cdate": "2023-07-03"
+                                },
+                                {
+                                    "certification_id": "01RABBIT040000000000003002",
+                                    "certificate_url": "https://example.com/certificate.pdf",
+                                    "name": "ADSP",
+                                    "ca": "한국산업인력공단",
+                                    "cdate": "2025-05-03"
+                                }
+                                ],
+                                "career": [
+                                {
+                                    "career_id": "01RABBIT060000000000003001",
+                                    "company_name": "AVGMAX",
+                                    "status": "EMPLOYED",
+                                    "position": "플랫폼 백엔드 엔지니어",
+                                    "start_date": "2023-03-01",
+                                    "end_date": "2023-08-15",
+                                    "certificate_url": "https://example.com/certificate.pdf"
+                                },
+                                {
+                                    "career_id": "01RABBIT060000000000003002",
+                                    "company_name": "구글",
+                                    "status": "UNEMPLOYED",
+                                    "position": "서버팀 테크리더",
+                                    "start_date": "2023-03-01",
+                                    "end_date": "2020-08-15",
+                                    "certificate_url": "https://example.com/certificate.pdf"
+                                },
+                                {
+                                    "career_id": "01RABBIT060000000000003003",
+                                    "company_name": "당근",
+                                    "status": "UNEMPLOYED",
+                                    "position": "서버팀 테크리더",
+                                    "start_date": "2023-03-01",
+                                    "end_date": "2025-08-15",
+                                    "certificate_url": "https://example.com/certificate.pdf"
+                                }
+                                ],
+                                "education": [
+                                {
+                                    "education_id": "01RABBIT050000000000003001",
+                                    "school_name": "신한고등학교",
+                                    "status": "GRADUATED",
+                                    "major": "인문계",
+                                    "start_date": "2013-03-01",
+                                    "end_date": "2013-02-15",
+                                    "certificate_url": "https://example.com/certificate.pdf"
+                                },
+                                {
+                                    "education_id": "01RABBIT050000000000003002",
+                                    "school_name": "서울시립대학교",
+                                    "status": "ENROLLED",
+                                    "major": "물리학과",
+                                    "start_date": "2010-03-01",
+                                    "end_date": "2019-02-15",
+                                    "certificate_url": "https://example.com/certificate.pdf"
+                                }
+                                ],
+                                "ai_review": "산업공학 전공과 글로벌 프로젝트 리더 경험을 바탕으로 전략적 사고와 팀 조율 능력을 갖춘 잠재력 높은 프론트엔드 전문가입니다."
+                            },
+                            "created_at": "2025-09-22T10:00:00"
+                            },
+                            {
+                            "bunny_id": "01BUNNY0010000000000000031",
+                            "user_name": "사용자31",
+                            "bunny_name": "bunny-031",
+                            "developer_type": "POPULAR",
+                            "bunny_type": "B",
+                            "position": "BACKEND",
+                            "reliability": 67,
+                            "current_price": 694,
+                            "closing_price": 2918,
+                            "market_cap": 69400000,
+                            "fluctuation_rate": null,
+                            "growth": 79,
+                            "stability": 50,
+                            "value": 58,
+                            "popularity": 54,
+                            "balance": 67,
+                            "badges": [],
+                            "ai_review": "최신 트렌드와 프레임워크에 강해 시장의 주목을 받는 인기주 개발자",
+                            "like_count": 7,
+                            "spec": {
+                                "name": "사용자31",
+                                "birthdate": "1994-10-24",
+                                "email": "user031@google.com",
+                                "phone": "010-0000-0031",
+                                "image": "https://picsum.photos/200",
+                                "resume": "https://example.com/resume.pdf",
+                                "position": "BACKEND",
+                                "link": [
+                                {
+                                    "sns_id": "01RABBIT070000000000003101",
+                                    "url": "https://www.linkedin.com/user31",
+                                    "type": "LINKEDIN",
+                                    "favicon": "https://linkedin.com/favicon.ico"
+                                },
+                                {
+                                    "sns_id": "01RABBIT070000000000003102",
+                                    "url": "https://www.tistory.com/user31",
+                                    "type": "TISTORY",
+                                    "favicon": "https://tistory.com/favicon.ico"
+                                }
+                                ],
+                                "skill": [
+                                "SpringBoot",
+                                "Node.js",
+                                "Kubernetes"
+                                ],
+                                "certification": [
+                                {
+                                    "certification_id": "01RABBIT040000000000003101",
+                                    "certificate_url": "https://example.com/certificate.pdf",
+                                    "name": "PC정비사",
+                                    "ca": "한국산업인력공단",
+                                    "cdate": "2023-07-03"
+                                },
+                                {
+                                    "certification_id": "01RABBIT040000000000003102",
+                                    "certificate_url": "https://example.com/certificate.pdf",
+                                    "name": "ADSP",
+                                    "ca": "한국산업인력공단",
+                                    "cdate": "2023-07-03"
+                                },
+                                {
+                                    "certification_id": "01RABBIT040000000000003103",
+                                    "certificate_url": "https://example.com/certificate.pdf",
+                                    "name": "SQLD",
+                                    "ca": "한국산업인력공단",
+                                    "cdate": "2024-06-20"
+                                }
+                                ],
+                                "career": [],
+                                "education": [
+                                {
+                                    "education_id": "01RABBIT050000000000003101",
+                                    "school_name": "신한고등학교",
+                                    "status": "GRADUATED",
+                                    "major": "자연계",
+                                    "start_date": "2016-03-01",
+                                    "end_date": "2016-02-15",
+                                    "certificate_url": "https://example.com/certificate.pdf"
+                                },
+                                {
+                                    "education_id": "01RABBIT050000000000003102",
+                                    "school_name": "서울대학교",
+                                    "status": "ENROLLED",
+                                    "major": "전자공학과",
+                                    "start_date": "2013-03-01",
+                                    "end_date": "2013-02-15",
+                                    "certificate_url": "https://example.com/certificate.pdf"
+                                }
+                                ],
+                                "ai_review": "심리학 전공과 조직개발 경험을 통해 협업과 커뮤니케이션 역량을 강화한 잠재력 높은 프론트엔드 전문가입니다."
+                            },
+                            "created_at": "2025-09-23T10:00:00"
+                            }
+                        ],
+                        "pageable": {
+                            "pageNumber": 0,
+                            "pageSize": 2,
+                            "sort": {
+                            "empty": true,
+                            "unsorted": true,
+                            "sorted": false
+                            },
+                            "offset": 0,
+                            "paged": true,
+                            "unpaged": false
+                        },
+                        "last": false,
+                        "totalElements": 51,
+                        "totalPages": 26,
+                        "size": 2,
+                        "number": 0,
+                        "sort": {
+                            "empty": true,
+                            "unsorted": true,
+                            "sorted": false
+                        },
+                        "first": true,
+                        "numberOfElements": 2,
+                        "empty": false
+                        }
                     """
                 )
             )
         )
     })
-    ResponseEntity<List<FetchBunnyResponse>> getBunnyList(
-        @Parameter(description = "버니 목록 필터", example = "ALL, LATEST, CAPITALIZATION")
-        String filter
+    ResponseEntity<Page<FetchBunnyResponse>> getBunnyList(
+        @Parameter(description = "버니 목록 필터", example = "ALL, LATEST, CAPITALIZATION") 
+        String filter,
+        
+        @ParameterObject
+        @PageableDefault(page = 0, size = 15, sort = {})
+        Pageable pageable
     );
 
     // ---------------- 버니 상세 조회 ----------------
