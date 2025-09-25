@@ -20,7 +20,6 @@ public enum BunnyError implements ErrorCode {
     ALREADY_UNLIKED(HttpStatus.CONFLICT, "이미 좋아요를 취소한 버니입니다."),
     BUNNYHISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 버니 기록을 찾을 수 없습니다.");
 
-
     private final HttpStatus status;
     private final String message;
 }
