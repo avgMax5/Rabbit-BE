@@ -6,8 +6,9 @@ import java.util.List;
 
 import team.avgmax.rabbit.bunny.entity.Order;
 import team.avgmax.rabbit.bunny.repository.custom.OrderRepositoryCustom;
+import team.avgmax.rabbit.bunny.repository.custom.OrderRepositoryOpenQtyCustom;
 
-public interface OrderRepository extends JpaRepository<Order, String>, OrderRepositoryCustom {
+public interface OrderRepository extends JpaRepository<Order, String>, OrderRepositoryCustom, OrderRepositoryOpenQtyCustom {
     List<Order> findAllByBunnyIdAndUserId(String bunnyId, String userId);
     List<Order> findOrdersByUserId(String personalUserId);
 }

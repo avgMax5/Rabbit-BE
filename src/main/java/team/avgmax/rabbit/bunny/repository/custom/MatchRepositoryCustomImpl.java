@@ -6,12 +6,14 @@ import org.springframework.stereotype.Repository;
 
 import team.avgmax.rabbit.bunny.entity.Match;
 import team.avgmax.rabbit.bunny.entity.QMatch;
+
 import java.math.BigDecimal;
 import java.util.List;
 
 @Repository
 @RequiredArgsConstructor
 public class MatchRepositoryCustomImpl implements MatchRepositoryCustom{
+
     private final JPAQueryFactory queryFactory;
 
     public List<Match> findMatchesByUserId(String userId) {
