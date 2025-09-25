@@ -33,7 +33,8 @@ public class HoldBunny extends BaseTime {
     @Column(precision = 30)
     private BigDecimal holdQuantity;
 
-    private BigDecimal costBasis;
+    @Builder.Default
+    private BigDecimal costBasis = BigDecimal.ZERO;
 
     public static HoldBunny create(Bunny bunny, Funding funding) {
         return HoldBunny.builder()
