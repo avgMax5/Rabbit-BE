@@ -25,11 +25,6 @@ import team.avgmax.rabbit.bunny.dto.orderBook.OrderBookSnapshot;
 import team.avgmax.rabbit.bunny.dto.request.OrderRequest;
 import team.avgmax.rabbit.bunny.dto.response.*;
 
-import team.avgmax.rabbit.bunny.dto.response.FetchBunnyResponse;
-import team.avgmax.rabbit.bunny.dto.response.BunnyUserContextResponse;
-import team.avgmax.rabbit.bunny.dto.response.MyBunnyResponse;
-import team.avgmax.rabbit.bunny.dto.response.RabbitIndexResponse;
-
 
 @Tag(name = "Bunny", description = "버니 API")
 public interface BunnyApiDocs {
@@ -312,8 +307,8 @@ public interface BunnyApiDocs {
                             }
                         ],
                         "pageable": {
-                            "pageNumber": 0,
-                            "pageSize": 2,
+                            "page_number": 0,
+                            "page_size": 2,
                             "sort": {
                             "empty": true,
                             "unsorted": true,
@@ -324,8 +319,8 @@ public interface BunnyApiDocs {
                             "unpaged": false
                         },
                         "last": false,
-                        "totalElements": 51,
-                        "totalPages": 26,
+                        "total_elements": 51,
+                        "total_pages": 26,
                         "size": 2,
                         "number": 0,
                         "sort": {
@@ -334,7 +329,7 @@ public interface BunnyApiDocs {
                             "sorted": false
                         },
                         "first": true,
-                        "numberOfElements": 2,
+                        "number_of_elements": 2,
                         "empty": false
                         }
                     """
@@ -436,132 +431,185 @@ public interface BunnyApiDocs {
             examples = @ExampleObject(
                 value = """
                 {
-                    "bunny_id": "01BUNNY0010000000000000033",
-                    "user_name": "사용자33",
+                    "bunny_id": "01BUNNY0010000000000000074",
+                    "user_name": "사용자74",
                     "user_image": "https://picsum.photos/200",
                     "user_carrot": 100000000,
-                    "bunny_name": "bunny-033",
-                    "bunny_type": "C",
-                    "developer_type": "BALANCE",
-                    "position": "BACKEND",
+                    "bunny_name": "bunny-074",
+                    "bunny_type": "A",
+                    "developer_type": "STABLE",
+                    "position": "FULLSTACK",
                     "badges": [
                         "KAKAO",
-                        "NAVER",
-                        "SHINHAN"
+                        "NAVER"
                     ],
-                    "today_time": "2025-09-23",
-                    "monthly_growth_rates": [],
-                    "price_history": [],
-                    "reliability": 99,
-                    "current_price": 71,
-                    "closing_price": 158,
-                    "market_cap": 71000000,
-                    "avg_bunny_type_vs_me": -33.289,
-                    "avg_position_vs_me": -72.192,
-                    "avg_dev_type_vs_me": -86.5027,
-                    "competitors": [
+                    "today_time": "2025-09-24",
+                    "monthly_growth_rates": [
                         {
-                        "bunnyId": "01BUNNY0010000000000000035",
-                        "bunnyName": "bunny-035",
-                        "userImage": "https://picsum.photos/200",
-                        "rank": 44,
-                        "marketCap": 73000000,
-                        "growthRate": 19.67
+                        "date": "2025-05-31",
+                        "closingPrice": null
                         },
+                        {
+                        "date": "2025-09-20",
+                        "closingPrice": 118622
+                        },
+                        {
+                        "date": "2025-09-21",
+                        "closingPrice": 104783
+                        },
+                        {
+                        "date": "2025-09-22",
+                        "closingPrice": 120807
+                        },
+                        {
+                        "date": "2025-09-23",
+                        "closingPrice": 123142
+                        },
+                        {
+                        "date": "2025-09-24",
+                        "closingPrice": 133493
+                        }
+                    ],
+                    "reliability": 14,
+                    "current_price": 133493,
+                    "closing_price": 127078,
+                    "market_cap": 133493000,
+                    "avg_bunny_type_vs_me": 14.6259,
+                    "avg_position_vs_me": 25.7467,
+                    "avg_dev_type_vs_me": 23.4007,
+                    "competitors": [
                         {
                         "bunnyId": "01BUNNY0010000000000000031",
                         "bunnyName": "bunny-031",
                         "userImage": "https://picsum.photos/200",
-                        "rank": 46,
-                        "marketCap": 69400000,
-                        "growthRate": -76.22
+                        "rank": 12,
+                        "marketCap": 133940000,
+                        "growthRate": 54.93
+                        },
+                        {
+                        "bunnyId": "01BUNNY0010000000000000079",
+                        "bunnyName": "bunny-079",
+                        "userImage": "https://picsum.photos/200",
+                        "rank": 14,
+                        "marketCap": 131193000,
+                        "growthRate": 22.29
                         }
                     ],
-                    "my_growth_rate": -55.06,
-                    "growth": 88,
-                    "stability": 57,
-                    "value": 63,
-                    "popularity": 5,
-                    "balance": 86,
+                    "my_growth_rate": 5.05,
+                    "growth": 55,
+                    "stability": 29,
+                    "value": 23,
+                    "popularity": 20,
+                    "balance": 48,
                     "holder_types": [
                         {
                         "developerType": "BASIC",
-                        "percentage": 28.69,
+                        "percentage": 35.7,
                         "count": 5
                         },
                         {
-                        "developerType": "BALANCE",
-                        "percentage": 4.38,
+                        "developerType": "GROWTH",
+                        "percentage": 7.3,
                         "count": 1
                         },
                         {
-                        "developerType": "GROWTH",
-                        "percentage": 12.45,
-                        "count": 2
-                        },
-                        {
-                        "developerType": "STABLE",
-                        "percentage": 1.04,
+                        "developerType": "POPULAR",
+                        "percentage": 13.5,
                         "count": 2
                         }
                     ],
                     "holders": [
                         {
-                            "userId": "01RABBIT010000000000000030",
-                            "userName": "사용자30",
-                            "userImg": "https://picsum.photos/200",
-                            "holdQuantity": 86382
+                        "userId": "01RABBIT010000000000000008",
+                        "userName": "사용자8",
+                        "userImg": "https://picsum.photos/200",
+                        "holdQuantity": 100
                         },
                         {
-                            "userId": "01RABBIT010000000000000085",
-                            "userName": "사용자85",
-                            "userImg": "https://picsum.photos/200",
-                            "holdQuantity": 84847
+                        "userId": "01RABBIT010000000000000044",
+                        "userName": "사용자44",
+                        "userImg": "https://picsum.photos/200",
+                        "holdQuantity": 92
                         },
                         {
-                            "userId": "01RABBIT010000000000000003",
-                            "userName": "사용자3",
-                            "userImg": "https://picsum.photos/200",
-                            "holdQuantity": 80826
+                        "userId": "01RABBIT010000000000000022",
+                        "userName": "사용자22",
+                        "userImg": "https://picsum.photos/200",
+                        "holdQuantity": 83
                         },
                         {
-                            "userId": "01RABBIT010000000000000099",
-                            "userName": "사용자_099",
-                            "userImg": "https://picsum.photos/200",
-                            "holdQuantity": 49662
+                        "userId": "01RABBIT010000000000000081",
+                        "userName": "사용자81",
+                        "userImg": "https://picsum.photos/200",
+                        "holdQuantity": 79
                         },
                         {
-                            "userId": "01RABBIT010000000000000052",
-                            "userName": "사용자52",
-                            "userImg": "https://picsum.photos/200",
-                            "holdQuantity": 43776
+                        "userId": "01RABBIT010000000000000039",
+                        "userName": "사용자39",
+                        "userImg": "https://picsum.photos/200",
+                        "holdQuantity": 73
                         },
                         {
-                            "userId": "01RABBIT010000000000000015",
-                            "userName": "사용자15",
-                            "userImg": "https://picsum.photos/200",
-                            "holdQuantity": 42974
+                        "userId": "01RABBIT010000000000000010",
+                        "userName": "사용자10",
+                        "userImg": "https://picsum.photos/200",
+                        "holdQuantity": 69
                         },
                         {
-                            "userId": "01RABBIT010000000000000036",
-                            "userName": "사용자36",
-                            "userImg": "https://picsum.photos/200",
-                            "holdQuantity": 38119
+                        "userId": "01RABBIT010000000000000038",
+                        "userName": "사용자38",
+                        "userImg": "https://picsum.photos/200",
+                        "holdQuantity": 43
                         },
                         {
-                            "userId": "01RABBIT010000000000000029",
-                            "userName": "사용자29",
-                            "userImg": "https://picsum.photos/200",
-                            "holdQuantity": 28614
-                        },
-                        {
-                            "userId": "01RABBIT010000000000000042",
-                            "userName": "사용자42",
-                            "userImg": "https://picsum.photos/200",
-                            "holdQuantity": 6702
+                        "userId": "01RABBIT010000000000000085",
+                        "userName": "사용자85",
+                        "userImg": "https://picsum.photos/200",
+                        "holdQuantity": 26
                         }
-                    ]
-                }
+                    ],
+                    "propensity_match_rate": null,
+                    "spec": {
+                        "name": "사용자74",
+                        "birthdate": "1990-06-27",
+                        "email": "user074@google.com",
+                        "phone": "010-0000-0074",
+                        "image": "https://picsum.photos/200",
+                        "resume": "https://example.com/resume.pdf",
+                        "position": "FULLSTACK",
+                        "link": [
+                        {
+                            "sns_id": "01RABBIT070000000000007401",
+                            "url": "https://www.linkedin.com/user74",
+                            "type": "LINKEDIN",
+                            "favicon": "https://linkedin.com/favicon.ico"
+                        }
+                        ],
+                        "skill": [
+                        "SpringBoot",
+                        "Django",
+                        "Svelte",
+                        "Rust"
+                        ],
+                        "certification": [],
+                        "career": [],
+                        "education": [
+                            {
+                                "education_id": "01RABBIT050000000000007401",
+                                "school_name": "신한고등학교",
+                                "status": "GRADUATED",
+                                "major": "실업계",
+                                "start_date": "2016-03-01",
+                                "end_date": "2013-02-15",
+                                "certificate_url": "https://example.com/certificate.pdf"
+                            }
+                        ],
+                        "ai_review": "경영학 전공과 창업 경험을 토대로 사업 감각과 리더십을 겸비한 잠재력 높은 풀스택 전문가입니다."
+                    },
+                        "ai_review": "최신 트렌드와 프레임워크에 강해 시장의 주목을 받는 인기주 개발자",
+                        "ai_feedback": "AI·ML 분야의 최신 툴셋을 빠르게 학습하여 포트폴리오에 반영하면 단가 친화형에서 성장주로 전환됩니다.",
+                        "like_count": 2
+                    }
                 """
             )
         )

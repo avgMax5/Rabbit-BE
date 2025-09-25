@@ -322,30 +322,30 @@ public interface PersonalUserApiDocs {
                     {
                         "hold_bunnies": [
                             {
-                                "bunnyId": "01HZXBUNNY00000000000000001",
-                                "bunnyName": "bunny-001",
-                                "holdQuantity": 100,
-                                "totalBuyAmount": 100000,
+                                "bunny_id": "01HZXBUNNY00000000000000001",
+                                "bunny_name": "bunny-001",
+                                "hold_quantity": 100,
+                                "cost_basis": 100000,
                                 "valuation": 120000,
-                                "avgPrice": 1000,
-                                "profitOrLoss": 20000,
-                                "returnRate": 20,
-                                "currentPrice": 1200,
-                                "priceDiffFromYesterday": 50,
-                                "priceChangeRate": 4.35
+                                "avg_price": 1000,
+                                "profit_or_loss": 20000,
+                                "return_rate": 20,
+                                "current_rrice": 1200,
+                                "price_diff_from_yesterday": 50,
+                                "price_change_rate": 4.35
                             },
                             {
-                                "bunnyId": "01HZXBUNNY00000000000000002",
-                                "bunnyName": "bunny-002",
-                                "holdQuantity": 50,
-                                "totalBuyAmount": 150000,
-                                "valuation": 140000,
-                                "avgPrice": 3000,
-                                "profitOrLoss": -10000,
-                                "returnRate": -6.67,
-                                "currentPrice": 2800,
-                                "priceDiffFromYesterday": -100,
-                                "priceChangeRate": -3.45
+                                "bunny_id": "01HZXBUNNY00000000000000002",
+                                "bunny_name": "bunny-002",
+                                "hold_quantity": 50,
+                                "cost_basis": 200000,
+                                "valuation": 180000,
+                                "avg_price": 4000,
+                                "profit_or_loss": -20000,
+                                "return_rate": -10,
+                                "current_rrice": 3600,
+                                "price_diff_from_yesterday": -100,
+                                "price_change_rate": -2.7
                             }
                         ]
                     }
@@ -523,5 +523,4 @@ public interface PersonalUserApiDocs {
     ResponseEntity<MatchListResponse> getMyMatches(
          @Parameter(description = "JWT 토큰", hidden = true) Jwt jwt
     );
-
 }
