@@ -84,7 +84,7 @@ public class MatchingEngine {
 
             // 보유 변동
             holdBunnyRepository.applyBuyMatch(buyer.getId(), bunny.getId(), tradable, tradeBaseAmt);
-            holdBunnyRepository.applySellMatch(seller.getId(), bunny.getId(), tradable);
+            holdBunnyRepository.applySellMatch(seller.getId(), bunny.getId(), tradeBaseAmt);
 
             // 주문 잔량 갱신
             remainingQty = remainingQty.subtract(tradable);

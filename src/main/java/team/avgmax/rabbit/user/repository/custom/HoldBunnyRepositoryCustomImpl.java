@@ -90,27 +90,13 @@ public class HoldBunnyRepositoryCustomImpl implements HoldBunnyRepositoryCustom 
     }
 
     @Override
-    public void applySellMatch(String userId, String bunnyId, BigDecimal filledQty) {
-        if (filledQty == null || filledQty.signum() <= 0) return;
+    public void applySellMatch(String userId, String bunnyId, BigDecimal tradeBaseAmount) {
+        if (tradeBaseAmount == null || tradeBaseAmount.signum() <= 0) return;
         QHoldBunny hold = QHoldBunny.holdBunny;
 
-        // oldQty = 현재 holdQuantity + filledQty (체결 전 보유 수량)
-        // newQty = holdQuantity (체결 후 보유 수량)
-        NumberExpression<BigDecimal> oldQty = hold.holdQuantity.add(filledQty);
-
-        // newCostBasis = costBasis * newQty / oldQty
-        NumberExpression<BigDecimal> newCostExpr =
-                new CaseBuilder()
-                        .when(oldQty.gt(BigDecimal.ZERO))
-                        .then(hold.costBasis.multiply(hold.holdQuantity).divide(oldQty))
-                        .otherwise(Expressions.constant(BigDecimal.ZERO));
-
         queryFactory.update(hold)
-                .set(hold.costBasis, newCostExpr)
-                .where(
-                        hold.holder.id.eq(userId),
-                        hold.bunny.id.eq(bunnyId)
-                )
+                .set(hold.costBasis, hold.costBasis.subtract(tradeBaseAmount))
+                .where(hold.holder.id.eq(userId), hold.bunny.id.eq(bunnyId))
                 .execute();
     }
 

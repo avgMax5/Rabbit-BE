@@ -164,20 +164,24 @@ public class BunnyService {
     // 마이 버니 조회
     @Transactional(readOnly = true)
     public MyBunnyResponse getMyBunny(String userId) {
+        // 사용자 조회
         PersonalUser personalUser = personalUserRepository.findById(userId)
                 .orElseThrow(() -> new UserException(UserError.USER_NOT_FOUND));
         Bunny myBunny = bunnyRepository.findByUserId(personalUser.getId())
                 .orElseThrow(() -> new BunnyException(BunnyError.BUNNY_NOT_FOUND));
 
+        // 필요 데이터 수집 (쿼리/계산)
         List<DailyPriceData> priceHistory = getPriceHistory(myBunny.getId());
         List<ComparisonData> competitors = getCompetitors(myBunny);
         List<MyBunnyByDevTypeData> holderTypes = getHolderTypes(myBunny);
         List<MyBunnyByHolderData> holders = getHolders(myBunny.getId());
         SpecResponse spec = SpecResponse.from(personalUser);
+
         BigDecimal myGrowthRate = calculateGrowthRate(myBunny);
         BigDecimal avgBunnyTypeGrowthRate = bunnyRepository.findAverageGrowthRateByBunnyType(myBunny.getBunnyType());
         BigDecimal avgPositionGrowthRate = bunnyRepository.findAverageGrowthRateByPosition(myBunny.getUser().getPosition());
         BigDecimal avgDevTypeGrowthRate = bunnyRepository.findAverageGrowthRateByDeveloperType(myBunny.getDeveloperType());
+
         List<DailyPriceData> monthlyGrowRate = getMonthlyGrowthRate(myBunny.getId());
 
         return MyBunnyResponse.builder()
@@ -209,7 +213,6 @@ public class BunnyService {
                 .balance(myBunny.getBalance())
                 .holderTypes(holderTypes)
                 .holders(holders)
-//                .propensityMatchRate()
                 .spec(spec)
                 .aiReview(myBunny.getAiReview())
                 .aiFeedback(myBunny.getAiFeedback())
@@ -241,8 +244,7 @@ public class BunnyService {
                 .map(OrderResponse::from)
                 .toList();
 
-        OrderListResponse myBunnyList = OrderListResponse.from(ordersResponse);
-        return myBunnyList;
+        return OrderListResponse.from(ordersResponse);
     }
 
     // 좋아요 추가
@@ -412,7 +414,6 @@ public class BunnyService {
 
     private List<DailyPriceData> getPriceHistory(String bunnyId) {
         List<BunnyHistory> bunnyHistories = bunnyHistoryRepository.findAllByBunnyIdOrderByDateAsc(bunnyId);
-
         return bunnyHistories.stream()
                 .map(bunnyHistory -> DailyPriceData.builder()
                         .date(bunnyHistory.getDate())
@@ -423,7 +424,6 @@ public class BunnyService {
 
     private List<ComparisonData> getCompetitors(Bunny myBunny) {
         List<Bunny> rankedBunnies = bunnyRepository.findAllWithUserOrderByMarketCapDesc();
-
         int myRankIndex = findRankIndex(rankedBunnies, myBunny.getId());
 
         // 내 버니를 찾지 못했거나, 경쟁할 대상이 없으면 빈 리스트 반환
@@ -437,7 +437,6 @@ public class BunnyService {
         if (myRankIndex > 0) {
             competitors.add(toComparisonData(rankedBunnies, myRankIndex - 1));
         }
-
         // 바로 아래 경쟁자
         if (myRankIndex < rankedBunnies.size() - 1) {
             competitors.add(toComparisonData(rankedBunnies, myRankIndex + 1));
@@ -460,7 +459,6 @@ public class BunnyService {
 
         // 성장률 = (현재가 - 종가) / 종가 * 100
         BigDecimal growthRate = calculateGrowthRate(competitor);
-
         String userImage = (competitor.getUser() != null) ? competitor.getUser().getImage() : null;
 
         return ComparisonData.builder()
@@ -505,39 +503,40 @@ public class BunnyService {
                 holdBunnyRepository.findHolderTypeDistributionByBunnyId(myBunny.getId());
 
         return distribution.stream()
-                .filter(t -> t.get(1, BigDecimal.class) != null)
-                .map(tuple -> {
-                    DeveloperType devType = tuple.get(0, DeveloperType.class);
-                    BigDecimal totalQuantity = tuple.get(1, BigDecimal.class);
-                    Long holderCount = tuple.get(2, Long.class);
-
-                    DeveloperType safeType =
-                            (devType != null) ? devType : DeveloperType.BASIC;
-
-                    assert totalQuantity != null;
-                    BigDecimal percentage = totalQuantity
-                            .divide(totalSupply, 4, RoundingMode.HALF_UP)
-                            .multiply(BigDecimal.valueOf(100));
-
-                    return MyBunnyByDevTypeData.builder()
-                            .developerType(safeType)
-                            .percentage(percentage)
-                            .count(holderCount != null ? holderCount : 0L)
-                            .build();
-                })
+                .map(tuple -> toDevTypeData(tuple, totalSupply)) // Optional<MyBunnyByDevTypeData>
+                .flatMap(Optional::stream)
                 .toList();
     }
 
-    private List<MyBunnyByHolderData> getHolders(String bunnyId) {
+    private Optional<MyBunnyByDevTypeData> toDevTypeData(Tuple tuple, BigDecimal totalSupply) {
+        BigDecimal totalQuantity = tuple.get(1, BigDecimal.class);
+        if (totalQuantity == null) return Optional.empty();
 
+        DeveloperType type = Optional.ofNullable(tuple.get(0, DeveloperType.class))
+                .orElse(DeveloperType.BASIC);
+        long count = Optional.ofNullable(tuple.get(2, Long.class)).orElse(0L);
+
+        // (totalQuantity / totalSupply) * 100, 소수 4자리 반올림
+        BigDecimal percentage = totalQuantity
+                .divide(totalSupply, 4, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100));
+
+        return Optional.of(
+                MyBunnyByDevTypeData.builder()
+                        .developerType(type)
+                        .percentage(percentage)
+                        .count(count)
+                        .build()
+        );
+    }
+
+    private List<MyBunnyByHolderData> getHolders(String bunnyId) {
         return holdBunnyRepository.findHoldersByBunnyId(bunnyId);
     }
 
     private List<DailyPriceData> getMonthlyGrowthRate(String bunnyId) {
         List<BunnyHistory> histories = bunnyHistoryRepository.findAllByBunnyIdOrderByDateAsc(bunnyId);
-        if (histories.isEmpty()) {
-            return Collections.emptyList();
-        }
+        if (histories.isEmpty()) return Collections.emptyList();
 
         // 월별 그룹핑
         Map<YearMonth, List<BunnyHistory>> historiesByMonth = histories.stream()
@@ -567,7 +566,6 @@ public class BunnyService {
 
             prevMonthEndClose = thisMonthEndClose;
         }
-
         return result;
     }
 
@@ -583,9 +581,7 @@ public class BunnyService {
     }
 
     private static BigDecimal calculateGrowthRate(BigDecimal prev, BigDecimal current) {
-        if (prev == null || prev.compareTo(BigDecimal.ZERO) == 0 || current == null) {
-            return null;
-        }
+        if (prev == null || prev.compareTo(BigDecimal.ZERO) == 0 || current == null) return null;
         return current.subtract(prev)
                 .divide(prev, 6, RoundingMode.HALF_UP)
                 .multiply(BigDecimal.valueOf(100))
@@ -593,14 +589,29 @@ public class BunnyService {
     }
 
     private void validateBuy(OrderRequest request, PersonalUser user) {
-        BigDecimal reserved = MoneyCalc.buyerReservation(request.quantity(), request.unitPrice());
-        BigDecimal currentCarrot = user.getCarrot();
+        if (request.quantity() == null || request.quantity().signum() <= 0) {
+            throw new BunnyException(BunnyError.INVALID_QUANTITY);
+        }
 
+        if (request.unitPrice() == null || request.unitPrice().signum() <= 0) {
+            throw new BunnyException(BunnyError.INVALID_PRICE);
+        }
+
+        // 총 예약금
+        BigDecimal reserved = MoneyCalc.buyerReservation(request.quantity(), request.unitPrice());
+
+        // 유저의 현재 보유 캐럿
+        BigDecimal currentCarrot = user.getCarrot();
+        if (currentCarrot == null || currentCarrot.signum() <= 0) throw new BunnyException(BunnyError.INSUFFICIENT_BALANCE);
         if (currentCarrot.compareTo(reserved) < 0) throw new BunnyException(BunnyError.INSUFFICIENT_BALANCE);
     }
 
     private void validateSell(Bunny bunny, OrderRequest request, PersonalUser user) {
-        BigDecimal holding = holdBunnyRepository.findByHolderAndBunny(user, bunny)
+        if (request.quantity() == null || request.quantity().signum() <= 0) {
+            throw new BunnyException(BunnyError.INVALID_QUANTITY);
+        }
+
+        BigDecimal holding = holdBunnyRepository.findByHolderAndBunnyForUpdate(user, bunny)
                 .map(HoldBunny::getHoldQuantity)
                 .orElse(BigDecimal.ZERO);
 
@@ -633,9 +644,7 @@ public class BunnyService {
     }
 
     private void emitOrderBookDiff(Bunny bunny, Set<BigDecimal> bidPrices, Set<BigDecimal> askPrices) {
-        if ((bidPrices == null || bidPrices.isEmpty()) && (askPrices == null || askPrices.isEmpty())) {
-            return;
-        }
+        if ((bidPrices == null || bidPrices.isEmpty()) && (askPrices == null || askPrices.isEmpty())) return;
 
         // 부분 집계들 (Upserts/Deletes)
         // 잔여가 있으면 → upsert
@@ -725,9 +734,7 @@ public class BunnyService {
         BigDecimal additionalBuyableQuantity = maxHoldableQuantity.subtract(currentHoldQuantity);
         
         // 추가 매수가 불가능한 경우 (이미 50% 이상 보유)
-        if (additionalBuyableQuantity.compareTo(BigDecimal.ZERO) <= 0) {
-            return BigDecimal.ZERO;
-        }
+        if (additionalBuyableQuantity.compareTo(BigDecimal.ZERO) <= 0) return BigDecimal.ZERO;
         
         // 현재가 기준으로 추가 매수 가능한 금액
         BigDecimal maxBuyableAmountByQuantity = bunny.getCurrentPrice().multiply(additionalBuyableQuantity);

@@ -12,7 +12,7 @@ public interface HoldBunnyRepositoryCustom {
 
     void applyBuyMatch(String userId, String bunnyId, BigDecimal qty, BigDecimal tradeBaseAmount);
 
-    void applySellMatch(String userId, String bunnyId, BigDecimal filledQty);
+    void applySellMatch(String userId, String bunnyId, BigDecimal tradeBaseAmount);
 
     void adjustReservation(String userId, String bunnyId, BigDecimal deltaQty);
 

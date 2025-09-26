@@ -22,60 +22,53 @@ import java.util.List;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class MyBunnyResponse {
 
-    // 요구사항 1: 코인명, 코인유형, 직군, 이름, 오늘날짜, 배지
+    // 코인 정보
     private String bunnyId;
-    private String userName; // 이름
+    private String userName;
     private String userImage;
-    private BigDecimal userCarrot; // 보유 캐럿
-    private String bunnyName; // 코인명
-    private BunnyType bunnyType; // 버니 유형 (희소, 밸런스, 단가)
-    private DeveloperType developerType; //  개발자 유형
-    private Position position; // 직군
-    private List<String> badges; // 배지
-    private LocalDate todayTime; // 오늘 날짜
+    private BigDecimal userCarrot;
+    private String bunnyName;
+    private BunnyType bunnyType;                 // 버니 유형 (희소 자산 / 밸런스 / 단가 친화)
+    private DeveloperType developerType;         // 개발자 유형 5가지
+    private Position position;                   // 직군
+    private List<String> badges;
+    private LocalDate todayTime;
 
-    // 요구사항 2: 성장성(차트)
-    private List<DailyPriceData> monthlyGrowthRates; // 전월말 ~ 이번월말 성장률
+    // 성장성 (차트)
+    private List<DailyPriceData> monthlyGrowthRates;   // 전월말 ~ 금월말 성장률
     private List<DailyPriceData> priceHistory;
 
-    // 요구사항 3: 시장 신뢰도
+    // 시장 신뢰도
     private int reliability;
 
-    // 요구사항 4: 시가총액, 현재가, 종가
     private BigDecimal currentPrice;
     private BigDecimal closingPrice;
-    private BigDecimal marketCap; // 시가 총액
+    private BigDecimal marketCap;                   // 시가 총액
 
-    // 요구사항 5: 삭제
-
-    // 요구사항 6: 경쟁 / 비교 지표
-    private BigDecimal avgBunnyTypeVsMe; // 버니 유형별 성장률 비교
-    private BigDecimal avgPositionVsMe; // 직군별 성장률 비교
-    private BigDecimal avgDevTypeVsMe; // 개발자 유형별 성장률 비교
-    private List<ComparisonData> competitors; // 경쟁자와 비교 (나와 가까운 순위 위아래)
+    // 비교 지표
+    private BigDecimal avgBunnyTypeVsMe;            // 버니 유형별 성장률 비교
+    private BigDecimal avgPositionVsMe;             // 직군별 성장률 비교
+    private BigDecimal avgDevTypeVsMe;              // 개발자 유형별 성장률 비교
+    private List<ComparisonData> competitors;       // 경쟁자와 비교 (나와 가까운 순위 위아래)
     private BigDecimal myGrowthRate;
 
-    // 요구사항 7: 개발자 유형 지표
+    // 개발자 유형 지표
     private int growth;
     private int stability;
     private int value;
     private int popularity;
     private int balance;
 
-    // 요구사항 9: 내 코인을 보유한 유형 및 보유자 확인
+    // 내 코인을 보유한 유형 및 보유자 확인
     private List<MyBunnyByDevTypeData> holderTypes;
     private List<MyBunnyByHolderData> holders;
 
-    // 요구사항 11: 성향 일치율 (거래 데이터 + 실제 성향)
-    private BigDecimal propensityMatchRate;
-
-    // 요구사항 12 : 나의 정보 + 스펙정보
+    // 나의 스펙 정보
     private SpecResponse spec;
 
-    // 요구사항 13 : AI 개선 제안
+    // AI 개선 제안
     private String aiReview;
     private String aiFeedback;
 
-    // 요구사항 14 : 좋아요 수
-    private long likeCount;
+    private long likeCount;                     // 좋아요 수
 }
