@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import team.avgmax.rabbit.bunny.entity.Bunny;
 import team.avgmax.rabbit.bunny.entity.BunnyHistory;
 import team.avgmax.rabbit.bunny.entity.enums.OrderType;
@@ -29,6 +30,8 @@ public class BunnyHistoryService {
     private final BunnyHistoryRepository bunnyHistoryRepository;
     private final MatchDailyAggregateRepository aggregateRepository;
     private final OrderRepository orderRepository;
+
+    private final BunnyIndicatorService bunnyIndicatorService;
 
     @Transactional
     public void aggregateFor(final LocalDate targetDate) {
@@ -91,6 +94,12 @@ public class BunnyHistoryService {
                     .build();
 
             bunnyHistoryRepository.save(history);
+            bunnyIndicatorService.updateBunnyGrowth(bunny);
+            bunnyIndicatorService.updateBunnyStability(bunny);
+            bunnyIndicatorService.updateBunnyPopularity(bunny);
+            bunnyIndicatorService.updateBunnyValue(bunny);
+            bunnyIndicatorService.updateBunnyBalance(bunny);
         }
+        
     }
 }

@@ -17,6 +17,7 @@ import team.avgmax.rabbit.funding.entity.FundBunny;
 public record FundBunnyResponse(
     String fundBunnyId,
     String bunnyName,
+    String image,
     BunnyType bunnyType,
     BigDecimal targetBny,
     BigDecimal collectedBny,
@@ -28,6 +29,7 @@ public record FundBunnyResponse(
         return FundBunnyResponse.builder()
                 .fundBunnyId(fundBunny.getId())
                 .bunnyName(fundBunny.getBunnyName())
+                .image(fundBunny.getUser().getImage())
                 .bunnyType(fundBunny.getType())
                 .targetBny(fundBunny.getType().getTotalSupply())
                 .collectedBny(fundBunny.getCollectedBny())

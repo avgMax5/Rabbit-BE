@@ -11,6 +11,7 @@ import team.avgmax.rabbit.bunny.entity.Order;
 import team.avgmax.rabbit.bunny.entity.enums.OrderType;
 import team.avgmax.rabbit.bunny.repository.MatchRepository;
 import team.avgmax.rabbit.bunny.repository.OrderRepository;
+import team.avgmax.rabbit.bunny.service.BunnyIndicatorService;
 import team.avgmax.rabbit.global.money.MoneyCalc;
 import team.avgmax.rabbit.user.entity.PersonalUser;
 import team.avgmax.rabbit.user.repository.HoldBunnyRepository;
@@ -30,6 +31,8 @@ public class MatchingEngine {
     private final OrderRepository orderRepository;
     private final HoldBunnyRepository holdBunnyRepository;
     private final PersonalUserRepository personalUserRepository;
+
+    private final BunnyIndicatorService bunnyIndicatorService;
 
     @Transactional(propagation = Propagation.MANDATORY)
     public MatchingResult match(Bunny bunny, Order myOrder, List<Order> candidates) {
@@ -115,6 +118,8 @@ public class MatchingEngine {
         } else {
             myOrder.updateQuantity(remainingQty); // 부분 체결 → 잔량 저장
         }
+
+        bunnyIndicatorService.updateBunnyValue(bunny);
 
         return new MatchingResult(touchedBid, touchedAsk);
     }

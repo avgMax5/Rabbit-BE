@@ -5,9 +5,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.querydsl.core.Tuple;
-import com.querydsl.core.types.dsl.CaseBuilder;
-import com.querydsl.core.types.dsl.Expressions;
-import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.JPAExpressions;
 import org.springframework.stereotype.Repository;
 
