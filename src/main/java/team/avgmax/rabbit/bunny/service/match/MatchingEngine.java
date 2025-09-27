@@ -40,6 +40,8 @@ public class MatchingEngine {
         final Set<BigDecimal> touchedAsk = new HashSet<>();
 
         BigDecimal remainingQty = myOrder.getQuantity();
+        // 마지막 체결가를 저장하기 위해 null
+        BigDecimal lastTrade = null;
 
         for (Order counter : candidates) {
             if (remainingQty.signum() <= 0) break;
@@ -64,6 +66,8 @@ public class MatchingEngine {
 
             // 현재가 업데이트 (가장 최신 체결가)
             bunny.updateCurrentPrice(tradePrice);
+            // 마지막 체결가 갱신
+            lastTrade = tradePrice;
 
             // 정산 (보유 / 캐럿)
             PersonalUser buyer  = match.getBuyUser();
@@ -121,6 +125,6 @@ public class MatchingEngine {
 
         bunnyIndicatorService.updateBunnyValue(bunny);
 
-        return new MatchingResult(touchedBid, touchedAsk);
+        return new MatchingResult(touchedBid, touchedAsk, lastTrade);
     }
 }

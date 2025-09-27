@@ -1,4 +1,4 @@
-package team.avgmax.rabbit.bunny.controller.webSocket;
+package team.avgmax.rabbit.bunny.controller.orderBook;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,7 +11,7 @@ import team.avgmax.rabbit.bunny.dto.orderBook.OrderBookDiff;
 @RequiredArgsConstructor
 public class OrderBookPublisher {
 
-    private final SimpMessagingTemplate messagingTemplate;
+    private final SimpMessagingTemplate messaging;
 
     public void publishDiff(String bunnyName, OrderBookDiff diff) {
         String destination = "/topic/bunnies/" + bunnyName + "/orderbook";
@@ -25,6 +25,6 @@ public class OrderBookPublisher {
                 diff.currentPrice()
         );
 
-        messagingTemplate.convertAndSend(destination, diff);
+        messaging.convertAndSend(destination, diff);
     }
 }

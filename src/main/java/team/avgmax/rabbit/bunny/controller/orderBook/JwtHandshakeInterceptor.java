@@ -1,4 +1,4 @@
-package team.avgmax.rabbit.bunny.controller.webSocket;
+package team.avgmax.rabbit.bunny.controller.orderBook;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.Cookie;

@@ -11,7 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import team.avgmax.rabbit.bunny.controller.webSocket.OrderBookPublisher;
+import team.avgmax.rabbit.bunny.controller.currentPrice.PriceTickPublisher;
+import team.avgmax.rabbit.bunny.controller.orderBook.OrderBookPublisher;
+import team.avgmax.rabbit.bunny.dto.currentPrice.PriceTick;
 import team.avgmax.rabbit.bunny.dto.data.ComparisonData;
 import team.avgmax.rabbit.bunny.dto.data.DailyPriceData;
 import team.avgmax.rabbit.bunny.dto.data.MyBunnyByDevTypeData;
@@ -40,7 +42,7 @@ import team.avgmax.rabbit.bunny.exception.BunnyException;
 import team.avgmax.rabbit.bunny.repository.*;
 import team.avgmax.rabbit.bunny.service.match.MatchingEngine;
 import team.avgmax.rabbit.bunny.service.match.MatchingResult;
-import team.avgmax.rabbit.bunny.service.webSocket.OrderBookAssembler;
+import team.avgmax.rabbit.bunny.service.orderBook.OrderBookAssembler;
 import team.avgmax.rabbit.global.money.MoneyCalc;
 import team.avgmax.rabbit.user.dto.response.SpecResponse;
 import team.avgmax.rabbit.user.entity.CorporationUser;
@@ -60,7 +62,7 @@ import java.time.YearMonth;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static team.avgmax.rabbit.bunny.service.webSocket.OrderBookAssembler.normalizePrice;
+import static team.avgmax.rabbit.bunny.service.orderBook.OrderBookAssembler.normalizePrice;
 
 import team.avgmax.rabbit.ai.service.ChatClientService;
 
@@ -80,6 +82,7 @@ public class BunnyService {
     private final CorporationUserRepository corporationUserRepository;
     private final OrderBookAssembler orderBookAssembler;
     private final OrderBookPublisher orderBookPublisher;
+    private final PriceTickPublisher priceTickPublisher;
     private final BunnyIndicatorService bunnyIndicatorService;
     private final ChatClientService chatClientService;
     private final MatchingEngine matchingEngine;
@@ -344,8 +347,12 @@ public class BunnyService {
         touchedBid.addAll(result.touchedBid());
         touchedAsk.addAll(result.touchedAsk());
 
-        // Diff 발행 (커밋 후 전송)
+        // OrderBookDiff 발행 (커밋 후 전송)
         emitOrderBookDiff(bunny, touchedBid, touchedAsk);
+
+        if (result.lastTradePrice() != null) {
+            publishAfterCommitForPrice(bunny.getBunnyName(), result.lastTradePrice());
+        }
 
         return OrderResponse.from(myOrder);
     }
@@ -685,7 +692,7 @@ public class BunnyService {
         );
 
         // 트랜잭션 커밋 이후에만 브로드캐스트
-        publishAfterCommit(bunny.getBunnyName(), diff);
+        publishAfterCommitForOrderBook(bunny.getBunnyName(), diff);
     }
 
     private List<OrderBookLevel> aggregateLevelsForPrices(String bunnyId, OrderType side, Set<BigDecimal> prices) {
@@ -721,7 +728,7 @@ public class BunnyService {
 
     // 트랜잭션 커밋 후에만 diff 를 publish 한다.
     // 트랜잭션이 없으면(비동기/스케줄러 등) 즉시 publish 로 폴백.
-    private void publishAfterCommit(String bunnyName, OrderBookDiff diff) {
+    private void publishAfterCommitForOrderBook(String bunnyName, OrderBookDiff diff) {
         if (TransactionSynchronizationManager.isActualTransactionActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override public void afterCommit() {
@@ -731,6 +738,19 @@ public class BunnyService {
         } else {
             // 트랜잭션 바깥이면 그냥 즉시 전송
             orderBookPublisher.publishDiff(bunnyName, diff);
+        }
+    }
+
+    private void publishAfterCommitForPrice(String bunnyName, BigDecimal currentPrice) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    priceTickPublisher.publishTick(new PriceTick(bunnyName, currentPrice, System.currentTimeMillis()));
+                }
+            });
+        } else {
+            priceTickPublisher.publishTick(new PriceTick(bunnyName, currentPrice, System.currentTimeMillis()));
         }
     }
 

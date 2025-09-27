@@ -5,5 +5,6 @@ import java.util.Set;
 
 public record MatchingResult(
         Set<BigDecimal> touchedBid,
-        Set<BigDecimal> touchedAsk
+        Set<BigDecimal> touchedAsk,
+        BigDecimal lastTradePrice
 ) {}

@@ -38,4 +38,12 @@ public class BunnyHistory extends BaseTime {
     private BigDecimal tradeQuantity;  // Match 의 quantity
 
     private BigDecimal marketCap;
+
+    public static BunnyHistory of(String bunnyId, LocalDate date, BigDecimal closingPrice) {
+        return BunnyHistory.builder()
+                .bunnyId(bunnyId)
+                .date(date)
+                .closingPrice(closingPrice)
+                .build();
+    }
 }
