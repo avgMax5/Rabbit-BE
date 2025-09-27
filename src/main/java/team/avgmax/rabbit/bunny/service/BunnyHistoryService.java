@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import team.avgmax.rabbit.bunny.dto.data.BunnyPressureData;
+import team.avgmax.rabbit.bunny.dto.response.PressureResponse;
 import team.avgmax.rabbit.bunny.entity.Bunny;
 import team.avgmax.rabbit.bunny.entity.BunnyHistory;
 import team.avgmax.rabbit.bunny.entity.enums.OrderType;
@@ -14,6 +16,7 @@ import team.avgmax.rabbit.bunny.repository.OrderRepository;
 import team.avgmax.rabbit.bunny.repository.custom.MatchDailyAggregateRepository;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -100,6 +103,56 @@ public class BunnyHistoryService {
             bunnyIndicatorService.updateBunnyValue(bunny);
             bunnyIndicatorService.updateBunnyBalance(bunny);
         }
-        
+    }
+
+    public PressureResponse getTop5ByPressure() {
+        log.info("getTop5 by pressure");
+        List<BunnyHistory> latest = bunnyHistoryRepository.findLatestPerCoin();
+
+        final List<Bunny> bunnies = bunnyRepository.findAll();
+        final Map<String, Bunny> bunnyMap = bunnies.stream()
+                .collect(Collectors.toMap(Bunny::getId, Function.identity()));
+
+        // 매수 강도 Top5 (buy ÷ sell × 100)
+        List<BunnyPressureData> buyTop5 = latest.stream()
+                .map(bh -> {
+                    BigDecimal buy = bh.getBuyQuantity() != null ? bh.getBuyQuantity() : BigDecimal.ZERO;
+                    BigDecimal sell = (bh.getSellQuantity() != null && bh.getSellQuantity().compareTo(BigDecimal.ZERO) > 0)
+                            ? bh.getSellQuantity()
+                            : BigDecimal.ONE;
+
+                    BigDecimal pressure = buy.divide(sell, 4, RoundingMode.HALF_UP)
+                                            .multiply(BigDecimal.valueOf(100));
+
+                    Bunny bunny = bunnyMap.get(bh.getBunnyId());
+                    String bunnyName = (bunny != null) ? bunny.getBunnyName() : "UNKNOWN";
+
+                    return BunnyPressureData.of(bh.getBunnyId(), bunnyName, bh.getDate(), pressure);
+                })
+                .sorted((a, b) -> b.pressure().compareTo(a.pressure()))
+                .limit(5)
+                .toList();
+
+        // 매도 강도 Top5 (sell ÷ buy × 100)
+        List<BunnyPressureData> sellTop5 = latest.stream()
+                .map(bh -> {
+                    BigDecimal buy = (bh.getBuyQuantity() != null && bh.getBuyQuantity().compareTo(BigDecimal.ZERO) > 0)
+                            ? bh.getBuyQuantity()
+                            : BigDecimal.ONE; // 0 나눔 방지
+                    BigDecimal sell = bh.getSellQuantity() != null ? bh.getSellQuantity() : BigDecimal.ZERO;
+
+                    BigDecimal pressure = sell.divide(buy, 4, RoundingMode.HALF_UP)
+                                            .multiply(BigDecimal.valueOf(100));
+
+                    Bunny bunny = bunnyMap.get(bh.getBunnyId());
+                    String bunnyName = (bunny != null) ? bunny.getBunnyName() : "UNKNOWN";
+
+                    return BunnyPressureData.of(bh.getBunnyId(), bunnyName, bh.getDate(), pressure);
+                })
+                .sorted((a, b) -> b.pressure().compareTo(a.pressure()))
+                .limit(5)
+                .toList();
+
+        return new PressureResponse(buyTop5, sellTop5);
     }
 }
