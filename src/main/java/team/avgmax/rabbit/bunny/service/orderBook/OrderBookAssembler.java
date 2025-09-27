@@ -1,4 +1,4 @@
-package team.avgmax.rabbit.bunny.service.webSocket;
+package team.avgmax.rabbit.bunny.service.orderBook;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

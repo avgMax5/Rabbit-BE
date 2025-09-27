@@ -13,7 +13,7 @@ import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
 import team.avgmax.rabbit.auth.oauth2.CookieBearerTokenResolver;
-import team.avgmax.rabbit.bunny.controller.webSocket.JwtHandshakeInterceptor;
+import team.avgmax.rabbit.bunny.controller.orderBook.JwtHandshakeInterceptor;
 
 // Spring-WebSocket dependency
 @Configuration

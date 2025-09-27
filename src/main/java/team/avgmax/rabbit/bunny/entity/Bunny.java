@@ -108,6 +108,10 @@ public class Bunny extends BaseTime {
         this.currentPrice = price;
     }
 
+    public void updateClosingPrice(BigDecimal price) {
+        this.closingPrice = price;
+    }
+
     public void updateReliability(double reliability) {
         this.reliability = (int) reliability;
     }
