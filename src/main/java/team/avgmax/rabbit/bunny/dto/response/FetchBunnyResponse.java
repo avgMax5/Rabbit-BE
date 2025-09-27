@@ -26,6 +26,7 @@ public class FetchBunnyResponse {
     private String bunnyId;
     private String userName;
     private String bunnyName;
+    private String image;
     private DeveloperType developerType;
     private BunnyType bunnyType;
     private Position position;
@@ -64,6 +65,7 @@ public class FetchBunnyResponse {
                 .bunnyId(bunny.getId())
                 .userName(bunny.getUser().getName())
                 .bunnyName(bunny.getBunnyName())
+                .image(bunny.getUser().getImage())
                 .developerType(bunny.getDeveloperType())
                 .bunnyType(bunny.getBunnyType())
                 .position(bunny.getUser().getPosition())

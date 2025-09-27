@@ -23,6 +23,7 @@ import team.avgmax.rabbit.bunny.dto.request.OrderRequest;
 import team.avgmax.rabbit.bunny.dto.response.ChartDataPoint;
 import team.avgmax.rabbit.bunny.dto.response.ChartResponse;
 import team.avgmax.rabbit.bunny.dto.response.FetchBunnyResponse;
+import team.avgmax.rabbit.bunny.dto.response.AiBunnyResponse;
 import team.avgmax.rabbit.bunny.dto.response.BunnyUserContextResponse;
 import team.avgmax.rabbit.bunny.dto.response.MyBunnyResponse;
 import team.avgmax.rabbit.bunny.dto.response.OrderListResponse;
@@ -61,6 +62,8 @@ import java.util.stream.Collectors;
 
 import static team.avgmax.rabbit.bunny.service.webSocket.OrderBookAssembler.normalizePrice;
 
+import team.avgmax.rabbit.ai.service.ChatClientService;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -78,6 +81,7 @@ public class BunnyService {
     private final OrderBookAssembler orderBookAssembler;
     private final OrderBookPublisher orderBookPublisher;
     private final BunnyIndicatorService bunnyIndicatorService;
+    private final ChatClientService chatClientService;
     private final MatchingEngine matchingEngine;
 
     // RABBIT 지수 조회
@@ -90,14 +94,16 @@ public class BunnyService {
         if (baseMarketCapSum.compareTo(BigDecimal.ZERO) == 0) {
             rabbitIndex = 100.0;
         } else {
-            rabbitIndex = currentMarketCapSum
+            double rawIndex = currentMarketCapSum
                     .divide(baseMarketCapSum, 4, RoundingMode.HALF_UP)
                     .multiply(BigDecimal.valueOf(100))
                     .doubleValue();
+            rabbitIndex = Math.min(rawIndex, 200.0);
         }
+        double finalScore = rabbitIndex / 2.0;
         
         return RabbitIndexResponse.builder()
-                .rabbitIndex(rabbitIndex)
+                .rabbitIndex(finalScore)
                 .build();
     }
 
@@ -410,6 +416,17 @@ public class BunnyService {
         BigDecimal currentPrice = queryCurrentPrice(bunny);
 
         return OrderBookSnapshot.from(bunny, bids, asks, currentPrice);
+    }
+
+    // AI 응답 동기화
+    @Transactional
+    public AiBunnyResponse syncAiResponse(String bunnyName) {
+        Bunny bunny = bunnyRepository.findByBunnyName(bunnyName)
+                .orElseThrow(() -> new BunnyException(BunnyError.BUNNY_NOT_FOUND));
+        String aiReview = chatClientService.getAiReviewOfBunny(bunny);
+        String aiFeedback = chatClientService.getAiFeedbackOfBunny(bunny);
+        bunny.updateAiReviewAndFeedback(aiReview, aiFeedback);
+        return AiBunnyResponse.from(bunny);
     }
 
     private List<DailyPriceData> getPriceHistory(String bunnyId) {
