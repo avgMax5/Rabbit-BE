@@ -22,8 +22,10 @@ import team.avgmax.rabbit.bunny.dto.response.OrderListResponse;
 import team.avgmax.rabbit.bunny.dto.response.MyBunnyResponse;
 import team.avgmax.rabbit.bunny.entity.enums.BunnyFilter;
 import team.avgmax.rabbit.bunny.entity.enums.ChartInterval;
+import team.avgmax.rabbit.bunny.service.BunnyHistoryService;
 import team.avgmax.rabbit.bunny.service.BunnyService;
 import team.avgmax.rabbit.bunny.dto.response.OrderResponse;
+import team.avgmax.rabbit.bunny.dto.response.PressureResponse;
 import team.avgmax.rabbit.bunny.dto.response.RabbitIndexResponse;
 import team.avgmax.rabbit.user.entity.enums.Role;
 
@@ -37,6 +39,7 @@ import java.util.List;
 public class BunnyController implements BunnyApiDocs {
 
     private final BunnyService bunnyService;
+    private final BunnyHistoryService bunnyHistoryService;
 
     // RABBIT 지수 조회
     @GetMapping("/rabbit-index")
@@ -169,4 +172,10 @@ public class BunnyController implements BunnyApiDocs {
 
         return ResponseEntity.ok(bunnyService.getOrderBookSnapshot(bunnyName));
     }
+
+    @GetMapping("/pressure-top5")
+    public ResponseEntity<PressureResponse> getPressureTop5() {
+        return ResponseEntity.ok(bunnyHistoryService.getTop5ByPressure());
+    }
+
 }

@@ -661,4 +661,7 @@ public interface BunnyApiDocs {
     ResponseEntity<OrderBookSnapshot> getOrderBookSnapshot(
         @Parameter(description = "버니 이름", example = "bunny-001") String bunnyName
     );
+
+    @Operation(summary = "거래 체결강도 top5", description = "모든 버니들의 매수/ 매도 체결강도 중 top5를 조회함")
+    ResponseEntity<PressureResponse> getPressureTop5();
 }
