@@ -179,25 +179,28 @@ public class FundingService {
         // 1. 상장한 User의 Role을 BUNNY로 변경
         fundBunny.getUser().updateRoleToBunny();
 
-        // 2. FundBunny를 Bunny로 변환하여 저장
+        // 2. 상장한 User에게 캐럿 지급
+        fundBunny.getUser().addCarrot(fundBunny.getType().getMarketCap());
+
+        // 3. FundBunny를 Bunny로 변환하여 저장
         Bunny bunny = bunnyRepository.save(fundBunny.convertToBunny());
 
-        // 3. 해당 FundBunny의 모든 Funding 조회
+        // 4. 해당 FundBunny의 모든 Funding 조회
         List<Funding> fundings = fundingRepository.findByFundBunny(fundBunny);
         
-        // 4. 조회한 Funding들로 HoldBunny들을 생성하여 저장
+        // 5. 조회한 Funding들로 HoldBunny들을 생성하여 저장
         List<HoldBunny> holdBunnies = fundBunny.createHoldBunnies(bunny, fundings);
         holdBunnyRepository.saveAll(holdBunnies);
 
-        // 5. AI Review와 AI Feedback 생성
+        // 6. AI Review와 AI Feedback 생성
         String aiReview = chatClientService.getAiReviewOfBunny(bunny);
         String aiFeedback = chatClientService.getAiFeedbackOfBunny(bunny);
         bunny.updateAiReviewAndFeedback(aiReview, aiFeedback);
 
-        // 6. Redis에서 만료 키 제거 (상장되면 만료 처리할 필요 없음)
+        // 7. Redis에서 만료 키 제거 (상장되면 만료 처리할 필요 없음)
         redisUtil.deleteData("fund_bunny:" + fundBunny.getId());
 
-        // 7. FundBunny 삭제 (CASCADE로 Funding도 함께 삭제)
+        // 8. FundBunny 삭제 (CASCADE로 Funding도 함께 삭제)
         fundBunnyRepository.delete(fundBunny);
     }
 
