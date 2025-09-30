@@ -16,12 +16,10 @@ public class OrderBookPublisher {
     public void publishDiff(String bunnyName, OrderBookDiff diff) {
         String destination = "/topic/bunnies/" + bunnyName + "/orderbook";
         log.info(
-                "호가 diff 전송: destination={}, bidUpserts={}, bidDeletes={}, askUpserts={}, askDeletes={}, currentPrice={}",
+                "호가 diff 전송: destination={}, orderUpserts={}, orderDeletes={}, currentPrice={}",
                 destination,
-                diff.bidUpserts().size(),
-                diff.bidDeletes().size(),
-                diff.askUpserts().size(),
-                diff.askDeletes().size(),
+                diff.orderUpserts().size(),
+                diff.orderDeletes().size(),
                 diff.currentPrice()
         );
 

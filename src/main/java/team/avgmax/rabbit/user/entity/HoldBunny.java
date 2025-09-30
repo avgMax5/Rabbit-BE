@@ -30,8 +30,9 @@ public class HoldBunny extends BaseTime {
     @JoinColumn(name = "bunny_id", nullable = false)
     private Bunny bunny;
 
+    @Builder.Default
     @Column(precision = 30)
-    private BigDecimal holdQuantity;
+    private BigDecimal holdQuantity = BigDecimal.ZERO;
 
     @Builder.Default
     private BigDecimal costBasis = BigDecimal.ZERO;
@@ -43,5 +44,22 @@ public class HoldBunny extends BaseTime {
                 .holdQuantity(funding.getQuantity())
                 .costBasis(bunny.getCurrentPrice().multiply(funding.getQuantity()))
                 .build();
+    }
+
+    public static HoldBunny create(Bunny bunny, PersonalUser user) {
+        return HoldBunny.builder()
+                .bunny(bunny)
+                .holder(user)
+                .build();
+    }
+
+    public void applySellMatch(BigDecimal quantity, BigDecimal amount) {
+        this.holdQuantity = this.holdQuantity.subtract(quantity);
+        this.costBasis = this.costBasis.subtract(amount);
+    }
+
+    public void applyBuyMatch(BigDecimal quantity, BigDecimal amount) {
+        this.holdQuantity = this.holdQuantity.add(quantity);
+        this.costBasis = this.costBasis.add(amount);
     }
 }

@@ -8,10 +8,8 @@ import java.util.List;
 // Diff 규칙 : upsert(추가/수정), delete(취소)
 public record OrderBookDiff(
         String bunnyName,
-        List<OrderBookLevel> bidUpserts,
-        List<BigDecimal> bidDeletes,
-        List<OrderBookLevel> askUpserts,
-        List<BigDecimal> askDeletes,
+        List<OrderBookLevel> orderUpserts,
+        List<BigDecimal> orderDeletes,
         BigDecimal currentPrice,
         long serverTime
 ) {}

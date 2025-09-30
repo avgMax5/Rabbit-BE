@@ -9,10 +9,13 @@ import team.avgmax.rabbit.bunny.entity.Bunny;
 import team.avgmax.rabbit.bunny.entity.Match;
 import team.avgmax.rabbit.bunny.entity.Order;
 import team.avgmax.rabbit.bunny.entity.enums.OrderType;
+import team.avgmax.rabbit.bunny.exception.BunnyError;
+import team.avgmax.rabbit.bunny.exception.BunnyException;
 import team.avgmax.rabbit.bunny.repository.MatchRepository;
 import team.avgmax.rabbit.bunny.repository.OrderRepository;
 import team.avgmax.rabbit.bunny.service.BunnyIndicatorService;
 import team.avgmax.rabbit.global.money.MoneyCalc;
+import team.avgmax.rabbit.user.entity.HoldBunny;
 import team.avgmax.rabbit.user.entity.PersonalUser;
 import team.avgmax.rabbit.user.repository.HoldBunnyRepository;
 import team.avgmax.rabbit.user.repository.PersonalUserRepository;
@@ -90,8 +93,12 @@ public class MatchingEngine {
             }
 
             // 보유 변동
-            holdBunnyRepository.applyBuyMatch(buyer.getId(), bunny.getId(), tradable, tradeBaseAmt);
-            holdBunnyRepository.applySellMatch(seller.getId(), bunny.getId(), tradeBaseAmt);
+            HoldBunny buyHoldBunny = holdBunnyRepository.findByHolderAndBunny(buyer, bunny)
+                    .orElseGet(() -> holdBunnyRepository.save(HoldBunny.create(bunny, buyer)));
+            HoldBunny sellHoldBunny = holdBunnyRepository.findByHolderAndBunny(seller, bunny)
+                    .orElseThrow(() -> new BunnyException(BunnyError.HOLD_BUNNY_NOT_FOUND));
+            buyHoldBunny.applyBuyMatch(tradable, tradePrice.multiply(tradable));
+            sellHoldBunny.applySellMatch(tradable, tradePrice.multiply(tradable));
 
             // 주문 잔량 갱신
             remainingQty = remainingQty.subtract(tradable);

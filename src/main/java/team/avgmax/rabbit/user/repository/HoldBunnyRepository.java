@@ -22,4 +22,6 @@ public interface HoldBunnyRepository extends JpaRepository<HoldBunny, String>, H
     @Query("select h from HoldBunny h where h.holder = :holder and h.bunny = :bunny")
     Optional<HoldBunny> findByHolderAndBunnyForUpdate(@Param("holder") PersonalUser holder,
                                                       @Param("bunny") Bunny bunny);
+
+    Optional<HoldBunny> findByHolderAndBunny(PersonalUser holder, Bunny bunny);
 }

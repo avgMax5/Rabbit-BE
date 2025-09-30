@@ -300,10 +300,6 @@ public class BunnyService {
                 .orElseThrow(() -> new BunnyException(BunnyError.BUNNY_NOT_FOUND));
         PersonalUser user = personalUserRepository.findByIdForUpdate(userId);
 
-        // 검증 (보유/잔액 등)
-        if (request.orderType() == OrderType.SELL) {
-            holdBunnyRepository.findByHolderAndBunnyForUpdate(user, bunny);
-        }
         switch (request.orderType()) {
             case BUY -> validateBuy(request, user);
             case SELL -> validateSell(bunny, request, user);
@@ -414,15 +410,15 @@ public class BunnyService {
         List<Order> sellOrders = orderRepository.findAllByBunnyAndSideForOrderBook(bunny.getId(), OrderType.SELL);
 
         // Order → OrderLeaf 변환 (잔여 수량 계산 포함)
-        List<OrderBookAssembler.OrderLeaf> bidLeaves = toLeaves(buyOrders);
-        List<OrderBookAssembler.OrderLeaf> askLeaves = toLeaves(sellOrders);
+        List<OrderBookAssembler.OrderLeaf> allLeaves = new ArrayList<>();
+        allLeaves.addAll(toLeaves(buyOrders));
+        allLeaves.addAll(toLeaves(sellOrders));
 
-        List<OrderBookLevel> bids = orderBookAssembler.toLevel(bidLeaves);
-        List<OrderBookLevel> asks = orderBookAssembler.toLevel(askLeaves);
+        List<OrderBookLevel> orders = orderBookAssembler.toLevel(allLeaves);
 
         BigDecimal currentPrice = queryCurrentPrice(bunny);
 
-        return OrderBookSnapshot.from(bunny, bids, asks, currentPrice);
+        return OrderBookSnapshot.from(bunny, orders, currentPrice);
     }
 
     // AI 응답 동기화
@@ -646,7 +642,7 @@ public class BunnyService {
         List<OrderBookAssembler.OrderLeaf> out = new ArrayList<>(orders.size());
         for (Order order : orders) {
             if (order.getQuantity().signum() > 0) {
-                out.add(new OrderBookAssembler.OrderLeaf(order.getUnitPrice(), order.getQuantity()));
+                out.add(new OrderBookAssembler.OrderLeaf(order.getUnitPrice(), order.getQuantity(), order.getOrderType()));
             }
         }
         return out;
@@ -671,22 +667,36 @@ public class BunnyService {
         if ((bidPrices == null || bidPrices.isEmpty()) && (askPrices == null || askPrices.isEmpty())) return;
 
         // 부분 집계들 (Upserts/Deletes)
-        // 잔여가 있으면 → upsert
-        List<OrderBookLevel> bidUpserts = aggregateLevelsForPrices(bunny.getId(), OrderType.BUY, bidPrices);
-        List<OrderBookLevel> askUpserts = aggregateLevelsForPrices(bunny.getId(), OrderType.SELL, askPrices);
+        Set<BigDecimal> allTouchedPrices = new HashSet<>();
+        if (bidPrices != null) allTouchedPrices.addAll(bidPrices);
+        if (askPrices != null) allTouchedPrices.addAll(askPrices);
+        
+        // 모든 주문 타입에 대해 집계
+        List<OrderBookLevel> orderUpserts = new ArrayList<>();
+        for (OrderType type : List.of(OrderType.BUY, OrderType.SELL)) {
+            Set<BigDecimal> typePrices = (type == OrderType.BUY) ? bidPrices : askPrices;
+            if (typePrices != null && !typePrices.isEmpty()) {
+                orderUpserts.addAll(aggregateLevelsForPrices(bunny.getId(), type, typePrices));
+            }
+        }
 
         // 잔여가 0이면 → delete
-        List<BigDecimal> bidDeletes = findDeletes(bidPrices, bidUpserts);
-        List<BigDecimal> askDeletes = findDeletes(askPrices, askUpserts);
+        List<BigDecimal> orderDeletes = new ArrayList<>();
+        Set<BigDecimal> upsertPrices = orderUpserts.stream()
+                .map(lv -> normalizePrice(lv.price()))
+                .collect(Collectors.toSet());
+        
+        orderDeletes.addAll(allTouchedPrices.stream()
+                .map(OrderBookAssembler::normalizePrice)
+                .filter(p -> !upsertPrices.contains(p))
+                .toList());
 
         BigDecimal currentPrice = queryCurrentPrice(bunny);
 
         OrderBookDiff diff = new OrderBookDiff(
                 bunny.getBunnyName(),
-                bidUpserts,
-                bidDeletes,
-                askUpserts,
-                askDeletes,
+                orderUpserts,
+                orderDeletes,
                 currentPrice,
                 System.currentTimeMillis()
         );
@@ -708,23 +718,11 @@ public class BunnyService {
                 ));
 
         return sumByPrice.entrySet().stream()
-                .map(e -> new OrderBookLevel(e.getKey(), e.getValue()))
+                .map(e -> new OrderBookLevel(e.getKey(), e.getValue(), side))
                 .sorted(Comparator.comparing(OrderBookLevel::price).reversed())
                 .toList();
     }
 
-    private List<BigDecimal> findDeletes(Set<BigDecimal> touchedPrices, List<OrderBookLevel> upserts) {
-        if (touchedPrices == null || touchedPrices.isEmpty()) return List.of();
-
-        Set<BigDecimal> upsertPrices = upserts.stream()
-                .map(lv -> normalizePrice(lv.price()))
-                .collect(Collectors.toSet());
-
-        return touchedPrices.stream()
-                .map(OrderBookAssembler::normalizePrice)
-                .filter(p -> !upsertPrices.contains(p))
-                .toList();
-    }
 
     // 트랜잭션 커밋 후에만 diff 를 publish 한다.
     // 트랜잭션이 없으면(비동기/스케줄러 등) 즉시 publish 로 폴백.
