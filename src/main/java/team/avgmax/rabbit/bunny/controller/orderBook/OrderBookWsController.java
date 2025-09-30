@@ -20,7 +20,7 @@ public class OrderBookWsController {
     @SendTo("/topic/bunnies/{bunnyName}/orderbook")
     public OrderBookSnapshot sendSnapshot(@DestinationVariable String bunnyName) {
         OrderBookSnapshot snapshot = bunnyService.getOrderBookSnapshot(bunnyName);
-        log.info("WS snapshot 요청: bunnyName={}, bids={}, asks={}", bunnyName, snapshot.bids(), snapshot.asks());
+        log.debug("WS snapshot 요청: bunnyName={}, ordersCount={}", bunnyName, snapshot.orders().size());
 
         return snapshot;
     }
