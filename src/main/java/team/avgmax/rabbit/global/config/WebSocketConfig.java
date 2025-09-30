@@ -45,8 +45,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         jwtDecoder,
                         jwtAuthenticationConverter
                 ))
-                // 개발 시 - 와일드카드("*"), 운영 시 - 화이트 리스트("https://app.example.com", "https://admin.example.com")
                 .setAllowedOriginPatterns("*")
-                .withSockJS();
+                .withSockJS()
+                .setSuppressCors(true);  // SockJS에서 자체 CORS 처리 비활성화
     }
 }
