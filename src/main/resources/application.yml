@@ -176,4 +176,4 @@ app:
   security:
     cookie:
       secure: true
-      same-site: Strict
+      same-site: Lax  # WebSocket/SockJS 지원을 위해 Lax로 변경 (Strict는 cross-origin 쿠키 차단)
