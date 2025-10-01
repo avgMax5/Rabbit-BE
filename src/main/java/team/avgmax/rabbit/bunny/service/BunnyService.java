@@ -319,7 +319,10 @@ public class BunnyService {
 
         // 매도 시 매도량만큼 즉시 선차감
         if (myOrder.getOrderType() == OrderType.SELL) {
-            holdBunnyRepository.adjustReservation(user.getId(), bunny.getId(), myOrder.getQuantity().negate());
+            HoldBunny holdBunny = holdBunnyRepository.findByHolderAndBunny(user, bunny)
+                    .orElseThrow(() -> new BunnyException(BunnyError.HOLD_BUNNY_NOT_FOUND));
+            holdBunny.preDecreaseQuantity(myOrder.getQuantity());
+            // holdBunnyRepository.adjustReservation(user.getId(), bunny.getId(), myOrder.getQuantity().negate());
         }
 
         // 오더북 Diff 용 터치 가격 (체결이 0건이어도 내 가격 레벨 반영)
@@ -376,7 +379,8 @@ public class BunnyService {
         // 매수자 취소 시 남은 잔여 예약금 환불
         if (order.getOrderType() == OrderType.BUY) {
             BigDecimal refund = MoneyCalc.buyerCancelRefund(order.getQuantity(), order.getUnitPrice());
-            personalUserRepository.addCarrotForUpdate(order.getUser().getId(), refund);
+            PersonalUser user = personalUserRepository.findByIdForUpdate(order.getUser().getId());
+            user.addCarrot(refund);
         }
 
         // 매도자 취소시 남은 잔여 예약 수량 복원

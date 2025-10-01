@@ -3,6 +3,7 @@ package team.avgmax.rabbit.bunny.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import team.avgmax.rabbit.bunny.entity.enums.OrderType;
 import team.avgmax.rabbit.global.entity.BaseTime;
 import team.avgmax.rabbit.global.util.UlidGenerator;
 
@@ -38,4 +39,17 @@ public class Match extends BaseTime {
     private BigDecimal quantity;
 
     private BigDecimal unitPrice;
+
+    public static Match create(Bunny bunny, Order myOrder, Order counter, BigDecimal tradableQuantity, BigDecimal tradePrice) {
+        PersonalUser buyUser = myOrder.getOrderType() == OrderType.BUY ? myOrder.getUser() : counter.getUser();
+        PersonalUser sellUser = myOrder.getOrderType() == OrderType.SELL ? myOrder.getUser() : counter.getUser();
+
+        return Match.builder()
+                .bunny(bunny)
+                .buyUser(buyUser)
+                .sellUser(sellUser)
+                .quantity(tradableQuantity)
+                .unitPrice(tradePrice)
+                .build();
+    }
 }

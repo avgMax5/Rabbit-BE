@@ -3,6 +3,8 @@ package team.avgmax.rabbit.bunny.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import team.avgmax.rabbit.bunny.exception.BunnyError;
+import team.avgmax.rabbit.bunny.exception.BunnyException;
 import team.avgmax.rabbit.global.entity.BaseTime;
 import team.avgmax.rabbit.global.util.UlidGenerator;
 import team.avgmax.rabbit.bunny.entity.enums.OrderType;
@@ -41,17 +43,17 @@ public class Order extends BaseTime {
 
     public void decreaseQuantity(BigDecimal delta) {
         if (delta == null || delta.signum() <= 0) {
-            throw new IllegalArgumentException("delta must be > 0");
+            throw new BunnyException(BunnyError.INVALID_QUANTITY_DELTA);
         }
         this.quantity = this.quantity.subtract(delta);
         if (this.quantity.signum() < 0) {
-            throw new IllegalStateException("quantity < 0");
+            throw new BunnyException(BunnyError.ORDER_QUANTITY_NEGATIVE);
         }
     }
 
     public void updateQuantity(BigDecimal newQty) {
         if (newQty == null || newQty.signum() < 0) {
-            throw new IllegalArgumentException("newQty must be >= 0");
+            throw new BunnyException(BunnyError.INVALID_QUANTITY);
         }
         this.quantity = newQty;
     }
