@@ -16,6 +16,8 @@ public enum BunnyError implements ErrorCode {
     INSUFFICIENT_HOLDING(HttpStatus.BAD_REQUEST, "보유 수량이 부족합니다."),
     INVALID_PRICE(HttpStatus.BAD_REQUEST, "유효하지 않은 금액입니다."),
     INVALID_QUANTITY(HttpStatus.BAD_REQUEST, "유효하지 않은 수량입니다."),
+    INVALID_QUANTITY_DELTA(HttpStatus.BAD_REQUEST, "수량 변경값은 0보다 커야 합니다."),
+    ORDER_QUANTITY_NEGATIVE(HttpStatus.INTERNAL_SERVER_ERROR, "주문 수량이 음수가 될 수 없습니다."),
     ORDER_ALREADY_FILLED(HttpStatus.CONFLICT, "이미 체결이 완료된 주문은 취소할 수 없습니다."),
     NEGATIVE_HOLDING(HttpStatus.CONFLICT, "보유 수량이 마이너스 입니다."),
     ALREADY_LIKED(HttpStatus.CONFLICT, "이미 좋아요를 추가한 버니입니다."),

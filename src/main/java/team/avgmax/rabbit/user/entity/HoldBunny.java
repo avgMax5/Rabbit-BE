@@ -53,8 +53,11 @@ public class HoldBunny extends BaseTime {
                 .build();
     }
 
-    public void applySellMatch(BigDecimal quantity, BigDecimal amount) {
+    public void preDecreaseQuantity(BigDecimal quantity) {
         this.holdQuantity = this.holdQuantity.subtract(quantity);
+    }
+
+    public void applySellMatch(BigDecimal amount) {
         this.costBasis = this.costBasis.subtract(amount);
     }
 
