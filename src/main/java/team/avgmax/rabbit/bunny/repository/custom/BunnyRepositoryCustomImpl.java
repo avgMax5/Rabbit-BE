@@ -103,4 +103,14 @@ public class BunnyRepositoryCustomImpl implements BunnyRepositoryCustom{
                 .limit(10)
                 .fetch();
     }
+
+    @Override
+    public List<Bunny> findAllByBadgeImg(String badgeImg) {
+        return queryFactory
+                .select(bunny)
+                .from(badge)
+                .join(bunny).on(badge.bunnyId.eq(bunny.id))
+                .where(badge.badgeImg.eq(badgeImg))
+                .fetch();
+    }
 }
