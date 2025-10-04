@@ -664,4 +664,64 @@ public interface BunnyApiDocs {
 
     @Operation(summary = "거래 체결강도 top5", description = "모든 버니들의 매수/ 매도 체결강도 중 top5를 조회함")
     ResponseEntity<PressureResponse> getPressureTop5();
+
+    // ---------------- 뱃지 별 보유자 목록 조회 ----------------
+    @Operation(
+        summary = "뱃지 별 보유자 목록 조회", 
+        description = "특정 뱃지를 보유한 버니들의 목록을 조회합니다."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "뱃지 보유자 목록 조회 성공",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = BadgeHolderListResponse.class),
+                examples = @ExampleObject(
+                    value = """
+                    {
+                        "size": 3,
+                        "badge_name": "kakao",
+                        "badge_img": "KAKAO",
+                        "badge_holders": [
+                            {
+                            "bunny_id": "01BUNNY0010000000000000031",
+                            "bunny_name": "dreamwave",
+                            "image": "https://minio.avgmax.team/rabbit/bunny_031.png"
+                            },
+                            {
+                            "bunny_id": "01BUNNY0010000000000000033",
+                            "bunny_name": "seoulsunset",
+                            "image": "https://minio.avgmax.team/rabbit/bunny_033.png"
+                            },
+                            {
+                            "bunny_id": "01BUNNY0010000000000000034",
+                            "bunny_name": "dock-yard",
+                            "image": "https://minio.avgmax.team/rabbit/bunny_034.png"
+                            }
+                        ]
+                    }
+                    """
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "사용자를 찾을 수 없음",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(
+                    value = """
+                    {
+                        "error": "USER_NOT_FOUND",
+                        "message": "사용자를 찾을 수 없습니다."
+                    }
+                    """
+                )
+            )
+        )
+    })
+    ResponseEntity<BadgeHolderListResponse> getBadgeHolders(
+        @Parameter(description = "뱃지 이름", example = "kakao") String badgeName
+    );
 }

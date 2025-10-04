@@ -24,4 +24,6 @@ public interface BunnyRepositoryCustom {
     BigDecimal sumCurrentMarketCap();
 
     List<Bunny> findTop10ByOrderBySpecUpdatedAtDesc();
+
+    List<Bunny> findAllByBadgeImg(String badgeImg);
 }

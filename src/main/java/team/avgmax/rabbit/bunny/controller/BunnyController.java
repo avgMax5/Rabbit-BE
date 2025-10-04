@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import team.avgmax.rabbit.bunny.dto.orderBook.OrderBookSnapshot;
 import team.avgmax.rabbit.bunny.dto.request.OrderRequest;
 import team.avgmax.rabbit.bunny.dto.response.ChartResponse;
+import team.avgmax.rabbit.bunny.dto.response.BadgeHolderListResponse;
 import team.avgmax.rabbit.bunny.dto.response.FetchBunnyResponse;
 import team.avgmax.rabbit.bunny.dto.response.BunnyUserContextResponse;
 import team.avgmax.rabbit.bunny.dto.response.OrderListResponse;
@@ -178,4 +179,10 @@ public class BunnyController implements BunnyApiDocs {
         return ResponseEntity.ok(bunnyHistoryService.getTop5ByPressure());
     }
 
+    // 뱃지 별 보유자 목록 조회
+    @GetMapping("/badges/{badgeName}/holders")
+    public ResponseEntity<BadgeHolderListResponse> getBadgeHolders(@PathVariable String badgeName) {
+        log.info("GET 뱃지 별 보유자 목록 조회: {}", badgeName);
+        return ResponseEntity.ok(bunnyService.getBadgeHolders(badgeName));
+    }
 }

@@ -26,6 +26,7 @@ import team.avgmax.rabbit.bunny.dto.response.ChartDataPoint;
 import team.avgmax.rabbit.bunny.dto.response.ChartResponse;
 import team.avgmax.rabbit.bunny.dto.response.FetchBunnyResponse;
 import team.avgmax.rabbit.bunny.dto.response.AiBunnyResponse;
+import team.avgmax.rabbit.bunny.dto.response.BadgeHolderListResponse;
 import team.avgmax.rabbit.bunny.dto.response.BunnyUserContextResponse;
 import team.avgmax.rabbit.bunny.dto.response.MyBunnyResponse;
 import team.avgmax.rabbit.bunny.dto.response.OrderListResponse;
@@ -77,9 +78,9 @@ public class BunnyService {
     private final HoldBunnyRepository holdBunnyRepository;
     private final BunnyLikeRepository bunnyLikeRepository;
     private final PersonalUserRepository personalUserRepository;
+    private final CorporationUserRepository corporationUserRepository;
     private final OrderRepository orderRepository;
     private final MatchRepository matchRepository;
-    private final CorporationUserRepository corporationUserRepository;
     private final OrderBookAssembler orderBookAssembler;
     private final OrderBookPublisher orderBookPublisher;
     private final PriceTickPublisher priceTickPublisher;
@@ -307,8 +308,7 @@ public class BunnyService {
         }
 
         // 신규 주문 저장 (초기 quantity = 요청 수량)
-        Order myOrder = request.toEntity(user, bunny);
-        orderRepository.save(myOrder);
+        Order myOrder = orderRepository.save(request.toEntity(user, bunny));
 
         // 매수 시 예약금(원금 + 수수료) 즉시 선차감
         if (myOrder.getOrderType() == OrderType.BUY) {
@@ -444,6 +444,13 @@ public class BunnyService {
                         .closingPrice(bunnyHistory.getClosingPrice())
                         .build())
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public BadgeHolderListResponse getBadgeHolders(String badgeName) {
+        String badgeImg = badgeName.toUpperCase();
+        List<Bunny> bunnies = bunnyRepository.findAllByBadgeImg(badgeImg);
+        return BadgeHolderListResponse.from(badgeImg, bunnies);
     }
 
     private List<ComparisonData> getCompetitors(Bunny myBunny) {
