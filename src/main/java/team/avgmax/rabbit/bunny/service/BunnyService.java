@@ -45,6 +45,7 @@ import team.avgmax.rabbit.bunny.service.match.MatchingEngine;
 import team.avgmax.rabbit.bunny.service.match.MatchingResult;
 import team.avgmax.rabbit.bunny.service.orderBook.OrderBookAssembler;
 import team.avgmax.rabbit.global.money.MoneyCalc;
+import team.avgmax.rabbit.global.util.RedisUtil;
 import team.avgmax.rabbit.user.dto.response.SpecResponse;
 import team.avgmax.rabbit.user.entity.CorporationUser;
 import team.avgmax.rabbit.user.entity.HoldBunny;
@@ -84,9 +85,11 @@ public class BunnyService {
     private final OrderBookAssembler orderBookAssembler;
     private final OrderBookPublisher orderBookPublisher;
     private final PriceTickPublisher priceTickPublisher;
-    private final BunnyIndicatorService bunnyIndicatorService;
     private final ChatClientService chatClientService;
     private final MatchingEngine matchingEngine;
+    private final RedisUtil redisUtil;
+
+    private static final String LIKE_SET_KEY_PREFIX = "bunny_like:";
 
     // RABBIT 지수 조회
     @Transactional(readOnly = true)
@@ -143,7 +146,9 @@ public class BunnyService {
                 .orElseThrow(() -> new BunnyException(BunnyError.BUNNY_NOT_FOUND));
         log.debug("Found bunny id={} name={}", bunny.getId(), bunny.getBunnyName());
 
-        return FetchBunnyResponse.from(bunny);
+        // Redis에서 실시간 좋아요 수 조회
+        long realTimeLikeCount = getTotalLikeCount(bunny.getId());
+        return FetchBunnyResponse.from(bunny, realTimeLikeCount);
     }
 
     // 버니 사용자 컨텍스트 조회 (매수/매도 가능한 금액과 수량)
@@ -156,7 +161,11 @@ public class BunnyService {
         PersonalUser user = personalUserRepository.findById(userId)
                 .orElseThrow(() -> new UserException(UserError.USER_NOT_FOUND));
 
-        boolean isLiked = bunnyLikeRepository.existsByBunnyIdAndUserId(bunny.getId(), userId);
+        // Redis와 DB 모두 확인하여 좋아요 여부 판단
+        String likeSetKey = LIKE_SET_KEY_PREFIX + bunny.getId();
+        boolean isLikedInRedis = redisUtil.isMemberOfSet(likeSetKey, userId);
+        boolean isLikedInDb = bunnyLikeRepository.existsByBunnyIdAndUserId(bunny.getId(), userId);
+        boolean isLiked = isLikedInRedis || isLikedInDb;
 
         // 매도 가능한 수량 계산 (사용자가 보유한 해당 bunny의 quantity 합계)
         BigDecimal sellableQuantity = holdBunnyRepository.findTotalQuantityByUserIdAndBunnyId(userId, bunny.getId());
@@ -258,39 +267,56 @@ public class BunnyService {
     }
 
     // 좋아요 추가
-    @Transactional
     public void addBunnyLike(String bunnyName, String userId, Role role) {
         Bunny bunny = findBunnyByName(bunnyName);
-        bunnyLikeRepository.save(BunnyLike.create(bunny.getId(), userId));
+        String likeSetKey = LIKE_SET_KEY_PREFIX + bunny.getId();
+        
+        // Redis Set에 추가 (중복 자동 방지)
+        redisUtil.addToSet(likeSetKey, userId);
+        
+        // Corporation 사용자의 경우 Badge는 즉시 처리 (비즈니스 로직상 중요)
         if (role == Role.ROLE_CORPORATION) {
             CorporationUser corporationUser = corporationUserRepository.findById(userId)
                 .orElseThrow(() -> new UserException(UserError.USER_NOT_FOUND));
             badgeRepository.save(Badge.create(bunny.getId(), userId, corporationUser.getCorporationName()));
         }
-        bunny.addLikeCount();
-        bunnyIndicatorService.updateBunnyReliability(bunny);
-        bunnyIndicatorService.updateBunnyValue(bunny);
-        bunnyIndicatorService.updateBunnyPopularity(bunny);
     }
 
     // 좋아요 취소
-    @Transactional
     public void cancelBunnyLike(String bunnyName, String userId, Role role) {
         Bunny bunny = findBunnyByName(bunnyName);
-        bunnyLikeRepository.deleteByBunnyIdAndUserId(bunny.getId(), userId);
+        String likeSetKey = LIKE_SET_KEY_PREFIX + bunny.getId();
+        
+        // Redis Set에서 제거
+        redisUtil.removeFromSet(likeSetKey, userId);
+        
+        // Corporation 사용자의 경우 Badge는 즉시 삭제 (비즈니스 로직상 중요)
         if (role == Role.ROLE_CORPORATION) {
             badgeRepository.deleteByBunnyIdAndUserId(bunny.getId(), userId);
-            return;
         }
-        bunny.subtractLikeCount();
-        bunnyIndicatorService.updateBunnyReliability(bunny);
-        bunnyIndicatorService.updateBunnyValue(bunny);
-        bunnyIndicatorService.updateBunnyPopularity(bunny);
     }
 
     private Bunny findBunnyByName(String bunnyName) {
         return bunnyRepository.findByBunnyName(bunnyName)
                 .orElseThrow(() -> new BunnyException(BunnyError.BUNNY_NOT_FOUND));
+    }
+
+    /**
+     * Redis Set의 크기를 실시간 좋아요 수로 반환
+     * DB의 likeCount는 스케줄러로 주기적으로 동기화됨
+     */
+    private long getTotalLikeCount(String bunnyId) {
+        String likeSetKey = LIKE_SET_KEY_PREFIX + bunnyId;
+        long redisLikeCount = redisUtil.getSetSize(likeSetKey);
+        
+        // Redis에 데이터가 없으면 DB 값 사용 (초기 상태 또는 Redis 장애 시)
+        if (redisLikeCount == 0) {
+            Bunny bunny = bunnyRepository.findById(bunnyId)
+                    .orElseThrow(() -> new BunnyException(BunnyError.BUNNY_NOT_FOUND));
+            return bunny.getLikeCount();
+        }
+        
+        return redisLikeCount;
     }
 
     // 거래 주문 요청
