@@ -16,6 +16,8 @@ import team.avgmax.rabbit.bunny.entity.Order;
 import team.avgmax.rabbit.bunny.entity.QOrder;
 import team.avgmax.rabbit.bunny.entity.enums.OrderType;
 
+import static team.avgmax.rabbit.user.entity.QPersonalUser.personalUser;
+
 @Repository
 @RequiredArgsConstructor
 public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
@@ -76,7 +78,9 @@ public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
     @Override
     public List<Order> lockedSellCandidatesByPriceAsc(String bunnyId, BigDecimal buyPrice, String excludeUserId) {
         QOrder order = QOrder.order;
-        return queryFactory.selectFrom(order)
+        return queryFactory
+                .selectFrom(order)
+                .join(order.user, personalUser).fetchJoin()
                 .where(
                         order.bunny.id.eq(bunnyId),
                         order.orderType.eq(OrderType.SELL),
@@ -84,7 +88,7 @@ public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
                         order.user.id.ne(excludeUserId),
                         order.quantity.gt(BigDecimal.ZERO)
                 )
-                .orderBy(order.unitPrice.asc(), order.createdAt.asc(), order.id.asc())
+                .orderBy(order.unitPrice.asc(), order.createdAt.asc())
                 .setLockMode(LockModeType.PESSIMISTIC_WRITE)
                 .fetch();
     }
@@ -92,7 +96,9 @@ public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
     @Override
     public List<Order> lockedBuyCandidatesByPriceDesc(String bunnyId, BigDecimal sellPrice, String excludeUserId) {
         QOrder order = QOrder.order;
-        return queryFactory.selectFrom(order)
+        return queryFactory
+                .selectFrom(order)
+                .join(order.user, personalUser).fetchJoin()
                 .where(
                         order.bunny.id.eq(bunnyId),
                         order.orderType.eq(OrderType.BUY),
@@ -100,7 +106,7 @@ public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
                         order.user.id.ne(excludeUserId),
                         order.quantity.gt(BigDecimal.ZERO)
                 )
-                .orderBy(order.unitPrice.desc(), order.createdAt.asc(), order.id.asc())
+                .orderBy(order.unitPrice.desc(), order.createdAt.asc())
                 .setLockMode(LockModeType.PESSIMISTIC_WRITE)
                 .fetch();
     }
