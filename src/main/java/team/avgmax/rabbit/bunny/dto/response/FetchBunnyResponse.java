@@ -61,6 +61,10 @@ public class FetchBunnyResponse {
     private LocalDateTime createdAt; // 생성시간
 
     public static FetchBunnyResponse from(Bunny bunny) {
+        return from(bunny, bunny.getLikeCount());
+    }
+
+    public static FetchBunnyResponse from(Bunny bunny, long likeCount) {
         return FetchBunnyResponse.builder()
                 .bunnyId(bunny.getId())
                 .userName(bunny.getUser().getName())
@@ -81,7 +85,7 @@ public class FetchBunnyResponse {
                 .balance(bunny.getBalance())
                 .badges(bunny.getBadges().stream().map(Badge::getBadgeImg).toList())
                 .aiReview(bunny.getAiReview())
-                .likeCount(bunny.getLikeCount())
+                .likeCount(likeCount)
                 .spec(SpecResponse.from(bunny.getUser()))
                 .createdAt(bunny.getCreatedAt())
                 .build();
